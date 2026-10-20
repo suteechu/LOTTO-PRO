@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Volume2, VolumeX, Plus, RefreshCw, Download, Sparkles, Terminal } from 'lucide-react';
+import { Volume2, VolumeX, Plus, RefreshCw, Download, Sparkles, Terminal, RefreshCcw } from 'lucide-react';
 import { isSoundEnabled, toggleSound, playTerminalBeep } from '../utils/sound';
 
 interface NavbarProps {
@@ -7,7 +7,9 @@ interface NavbarProps {
   onResetData: () => void;
   onExportCSV: () => void;
   onOpenPresets: () => void;
+  onAutoSync: () => void;
   drawCount: number;
+  latestDate: string;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -15,7 +17,9 @@ export const Navbar: React.FC<NavbarProps> = ({
   onResetData,
   onExportCSV,
   onOpenPresets,
-  drawCount
+  onAutoSync,
+  drawCount,
+  latestDate
 }) => {
   const [soundOn, setSoundOn] = useState(isSoundEnabled());
   const [time, setTime] = useState<string>('');
@@ -48,9 +52,9 @@ export const Navbar: React.FC<NavbarProps> = ({
             <h1 className="text-sm sm:text-base font-extrabold tracking-tight uppercase text-white flex items-center gap-1.5">
               LOTTO-PRO <span className="text-yellow-400 text-xs font-mono font-semibold px-1.5 py-0.5 rounded bg-yellow-400/10 border border-yellow-400/30">v3.5 PRO</span>
             </h1>
-            <span className="hidden md:inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-              <span className="w-1.5 h-1.5 mr-1 rounded-full bg-emerald-400 animate-pulse"></span>
-              ENGINE ONLINE
+            <span className="hidden md:inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+              <span className="w-1.5 h-1.5 mr-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+              AUTO-SYNC: {latestDate}
             </span>
           </div>
           <p className="text-[10px] text-gray-400 hidden sm:block">Quantitative Thai Lottery Backtesting & Auto-Optimizer</p>
@@ -71,6 +75,19 @@ export const Navbar: React.FC<NavbarProps> = ({
 
       {/* Action Buttons */}
       <div className="flex items-center gap-1.5 sm:gap-2">
+        {/* Auto Sync Button */}
+        <button
+          onClick={() => {
+            playTerminalBeep(900);
+            onAutoSync();
+          }}
+          title="ซิงค์และตรวจงวดใหม่อัตโนมัติ"
+          className="flex items-center gap-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-2.5 py-1.5 rounded text-xs font-bold transition-all"
+        >
+          <RefreshCcw size={13} className="animate-spin-hover" />
+          <span className="hidden sm:inline">Auto-Sync</span>
+        </button>
+
         <button
           onClick={handleToggleSound}
           title={soundOn ? 'ปิดเสียงเอฟเฟกต์' : 'เปิดเสียงเอฟเฟกต์'}

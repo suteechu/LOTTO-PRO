@@ -1,6 +1,6 @@
 import React from 'react';
 import { StrategyMetrics } from '../types';
-import { Bot, Sliders, Ticket, Zap, ShieldCheck } from 'lucide-react';
+import { Bot, Sliders, Ticket, Zap, Calendar, Sparkles } from 'lucide-react';
 import { playTerminalBeep } from '../utils/sound';
 
 interface PredictionHeroProps {
@@ -17,6 +17,48 @@ interface PredictionHeroProps {
   showParams: boolean;
   onToggleParams: () => void;
   onOpenTicket: () => void;
+  latestDate: string;
+}
+
+export function getNextDrawSchedule(latestDate: string) {
+  const match = latestDate.match(/(\d+)\s+([^\s]+)\s+(\d+)/);
+  if (!match) return { thai: '1 พ.ย. 69', eng: '1 NOV' };
+
+  const day = parseInt(match[1], 10);
+  const thaiMonth = match[2];
+  const year = parseInt(match[3], 10);
+
+  const months = [
+    { th: 'ม.ค.', en: 'JAN' },
+    { th: 'ก.พ.', en: 'FEB' },
+    { th: 'มี.ค.', en: 'MAR' },
+    { th: 'เม.ย.', en: 'APR' },
+    { th: 'พ.ค.', en: 'MAY' },
+    { th: 'มิ.ย.', en: 'JUN' },
+    { th: 'ก.ค.', en: 'JUL' },
+    { th: 'ส.ค.', en: 'AUG' },
+    { th: 'ก.ย.', en: 'SEP' },
+    { th: 'ต.ค.', en: 'OCT' },
+    { th: 'พ.ย.', en: 'NOV' },
+    { th: 'ธ.ค.', en: 'DEC' },
+  ];
+
+  const idx = months.findIndex(m => m.th === thaiMonth);
+  if (idx === -1) return { thai: '1 พ.ย. 69', eng: '1 NOV' };
+
+  if (day <= 1) {
+    return {
+      thai: `16 ${thaiMonth} ${year}`,
+      eng: `16 ${months[idx].en}`
+    };
+  } else {
+    const nextIdx = (idx + 1) % 12;
+    const nextYear = idx === 11 ? year + 1 : year;
+    return {
+      thai: `1 ${months[nextIdx].th} ${nextYear}`,
+      eng: `1 ${months[nextIdx].en}`
+    };
+  }
 }
 
 export const PredictionHero: React.FC<PredictionHeroProps> = ({
@@ -26,8 +68,11 @@ export const PredictionHero: React.FC<PredictionHeroProps> = ({
   onAutoTune,
   showParams,
   onToggleParams,
-  onOpenTicket
+  onOpenTicket,
+  latestDate
 }) => {
+  const nextSchedule = getNextDrawSchedule(latestDate);
+
   return (
     <div className="bg-gradient-to-b from-[#1a2028] to-[#14181f] border border-gray-800 rounded-xl p-4 shadow-xl relative overflow-hidden">
       {/* Background ambient glow */}
@@ -58,6 +103,9 @@ export const PredictionHero: React.FC<PredictionHeroProps> = ({
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
             LIVE SIGNAL
           </span>
+          <span className="text-yellow-400 text-[10px] font-mono font-bold bg-yellow-400/10 px-2 py-0.5 rounded border border-yellow-400/20 flex items-center gap-1">
+            <Calendar size={11} /> {nextSchedule.thai}
+          </span>
         </div>
       </div>
 
@@ -67,7 +115,10 @@ export const PredictionHero: React.FC<PredictionHeroProps> = ({
         <div className="bg-[#0e1217] border border-gray-800 rounded-lg p-3">
           <div className="flex justify-between items-center mb-1">
             <span className="text-[10px] font-bold text-gray-400 uppercase">3 ตัวบน (Top 3)</span>
-            <span className="text-[9px] text-yellow-400 font-mono font-bold">1ST PRIZE</span>
+            <div className="flex items-center gap-1">
+              <span className="text-emerald-400 text-[9px] font-bold font-mono">BUY</span>
+              <span className="text-yellow-400 text-[9px] font-bold font-mono bg-yellow-500/10 px-1 rounded">{nextSchedule.eng}</span>
+            </div>
           </div>
           <div className="flex items-baseline gap-1">
             <div className="flex gap-1.5">

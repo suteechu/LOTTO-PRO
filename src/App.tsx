@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { Navbar } from './components/Navbar';
 import { TickerBar } from './components/TickerBar';
 import { PredictionHero } from './components/PredictionHero';
@@ -13,6 +13,7 @@ import {
   getStoredLotteryData,
   saveStoredLotteryData,
   resetStoredLotteryData,
+  syncLatestDraws,
   INITIAL_LOTTERY_DATA
 } from './data/lotteryData';
 import {
@@ -24,17 +25,30 @@ import {
 } from './utils/engine';
 import { LotteryDraw, FormulaState } from './types';
 import { playSuccessChime, playTerminalBeep } from './utils/sound';
+import { CheckCircle2 } from 'lucide-react';
 
 export default function App() {
   const [draws, setDraws] = useState<LotteryDraw[]>(() => getStoredLotteryData());
   const [formula, setFormula] = useState<FormulaState>(DEFAULT_FORMULA);
   const [showParams, setShowParams] = useState(false);
   const [isOptimizing, setIsOptimizing] = useState(false);
+  const [syncToast, setSyncToast] = useState<string | null>(null);
 
   // Modals
   const [isTicketOpen, setIsTicketOpen] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isPresetsOpen, setIsPresetsOpen] = useState(false);
+
+  // Auto-sync on startup
+  useEffect(() => {
+    const { updatedDraws, newCount } = syncLatestDraws(draws);
+    if (newCount > 0) {
+      setDraws(updatedDraws);
+      setSyncToast(`⚡ ระบบ Auto-Update ดึงข้อมูลงวดใหม่เพิ่ม ${newCount} งวด (ล่าสุด ${updatedDraws[0].date}) เรียบร้อยแล้ว!`);
+      playSuccessChime();
+      setTimeout(() => setSyncToast(null), 5000);
+    }
+  }, []);
 
   // Latest draw is index 0
   const latestDraw = draws[0] || INITIAL_LOTTERY_DATA[0];
@@ -54,6 +68,20 @@ export default function App() {
     return calculateDigitStats(draws, 'top3');
   }, [draws]);
 
+  // Manual Trigger Auto Sync
+  const handleAutoSync = useCallback(() => {
+    playTerminalBeep(900, 0.08);
+    const { updatedDraws, newCount } = syncLatestDraws(draws);
+    if (newCount > 0) {
+      setDraws(updatedDraws);
+      setSyncToast(`🔄 ซิงค์สำเร็จ! เพิ่มข้อมูลงวดใหม่ ${newCount} งวด (ล่าสุด ${updatedDraws[0].date})`);
+      playSuccessChime();
+    } else {
+      setSyncToast(`✅ ฐานข้อมูลเป็นงวดล่าสุดเรียบร้อยแล้ว (${draws[0]?.date || '16 ต.ค. 69'})`);
+    }
+    setTimeout(() => setSyncToast(null), 4000);
+  }, [draws]);
+
   // Add Draw
   const handleAddDraw = useCallback((newDraw: LotteryDraw) => {
     setDraws(prev => {
@@ -69,6 +97,8 @@ export default function App() {
     setDraws(fresh);
     setFormula(DEFAULT_FORMULA);
     playSuccessChime();
+    setSyncToast('🔄 รีเซ็ตฐานข้อมูลสถิติกลับเป็นค่ามาตรฐานเรียบร้อยแล้ว');
+    setTimeout(() => setSyncToast(null), 3000);
   }, []);
 
   // Reset Formula
@@ -130,8 +160,21 @@ export default function App() {
         onResetData={handleResetData}
         onExportCSV={handleExportCSV}
         onOpenPresets={() => setIsPresetsOpen(true)}
+        onAutoSync={handleAutoSync}
         drawCount={draws.length}
+        latestDate={latestDraw.date}
       />
+
+      {/* Sync Toast Notification */}
+      {syncToast && (
+        <div className="bg-gradient-to-r from-emerald-600 to-teal-600 text-white px-4 py-2 text-xs font-bold flex items-center justify-between shadow-lg animate-in fade-in slide-in-from-top-1">
+          <div className="flex items-center gap-2 max-w-[1600px] mx-auto w-full">
+            <CheckCircle2 size={16} className="shrink-0" />
+            <span>{syncToast}</span>
+          </div>
+          <button onClick={() => setSyncToast(null)} className="text-white/80 hover:text-white ml-2 text-xs">✕</button>
+        </div>
+      )}
 
       {/* Ticker strip */}
       <TickerBar
@@ -154,6 +197,7 @@ export default function App() {
             showParams={showParams}
             onToggleParams={() => setShowParams(prev => !prev)}
             onOpenTicket={() => setIsTicketOpen(true)}
+            latestDate={latestDraw.date}
           />
 
           {/* Formula Parameters Drawer */}
@@ -186,7 +230,7 @@ export default function App() {
         <div className="flex flex-wrap justify-between items-center max-w-[1600px] mx-auto gap-2">
           <span>LOTTO-PRO QUANT ALGORITHM TERMINAL © 2026 | Built for Analytical & Backtesting Purposes</span>
           <span className="text-gray-400">
-            Powered by Quant Engine • Developed by Sutee
+            Auto-Sync Engine v3.5 • Developed by Sutee
           </span>
         </div>
       </footer>
