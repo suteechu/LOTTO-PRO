@@ -18,6 +18,7 @@ interface PredictionHeroProps {
   onToggleParams: () => void;
   onOpenTicket: () => void;
   latestDate: string;
+  activePresetName?: string;
 }
 
 export function getNextDrawSchedule(latestDate: string) {
@@ -69,7 +70,8 @@ export const PredictionHero: React.FC<PredictionHeroProps> = ({
   showParams,
   onToggleParams,
   onOpenTicket,
-  latestDate
+  latestDate,
+  activePresetName
 }) => {
   const nextSchedule = getNextDrawSchedule(latestDate);
 
@@ -94,9 +96,12 @@ export const PredictionHero: React.FC<PredictionHeroProps> = ({
 
       {/* Top Header */}
       <div className="flex justify-between items-center mb-3">
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1.5 flex-wrap">
           <Zap size={14} className="text-yellow-400" />
           <p className="text-gray-400 text-[11px] font-black uppercase tracking-wider">Next Draw Forecast</p>
+          <span className="text-[9px] font-bold text-yellow-300 bg-yellow-500/15 border border-yellow-500/30 px-2 py-0.5 rounded-full max-w-[170px] truncate" title={activePresetName}>
+            {activePresetName || 'สูตรเซียน'}
+          </span>
         </div>
         <div className="flex items-center gap-2">
           <span className="text-emerald-400 text-[10px] font-bold flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/30">

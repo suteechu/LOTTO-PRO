@@ -1,10 +1,10 @@
-import { PresetFormula } from '../types';
+import { PresetFormula, FormulaState } from '../types';
 
 export const PRESET_FORMULAS: PresetFormula[] = [
   {
     id: 'ultimate-quant-alpha',
     name: '🏆 Ultimate Quant Alpha (RR 1:17.4 | High P&L)',
-    description: 'สูตรอัลฟ่าคำนวณถ่วงน้ำหนักความไม่สมมาตร (Asymmetric RR) สถิติจริงเข้า 3 ตัวตรง 3 ครั้ง และ 2 ตัวตรง 8 ครั้ง ROI +1,640%',
+    description: 'สูตรอัลฟ่าคำนวณถ่วงน้ำหนักความไม่สมมาตร (Asymmetric RR) สถิติจริงเข้า 3 ตัวตรง 3 งวด และ 2 ตัวตรง 8 งวด ROI +1,640%',
     targetMode: 'both',
     winRateTag: 'ROI +1,640% (Top RR)',
     formula: {
@@ -72,3 +72,19 @@ export const PRESET_FORMULAS: PresetFormula[] = [
     }
   }
 ];
+
+export function matchCurrentPreset(formula: FormulaState): PresetFormula | null {
+  for (const preset of PRESET_FORMULAS) {
+    const pf = preset.formula;
+    if (
+      pf.digit1.v1 === formula.digit1.v1 && pf.digit1.v2 === formula.digit1.v2 && pf.digit1.c === formula.digit1.c &&
+      pf.digit2.v1 === formula.digit2.v1 && pf.digit2.v2 === formula.digit2.v2 && pf.digit2.c === formula.digit2.c &&
+      pf.digit3.v1 === formula.digit3.v1 && pf.digit3.v2 === formula.digit3.v2 && pf.digit3.c === formula.digit3.c &&
+      pf.bot1.v1 === formula.bot1.v1 && pf.bot1.v2 === formula.bot1.v2 && pf.bot1.c === formula.bot1.c &&
+      pf.bot2.v1 === formula.bot2.v1 && pf.bot2.v2 === formula.bot2.v2 && pf.bot2.c === formula.bot2.c
+    ) {
+      return preset;
+    }
+  }
+  return null;
+}

@@ -10,6 +10,7 @@ import { TicketModal } from './components/TicketModal';
 import { AddDrawModal } from './components/AddDrawModal';
 import { PresetsModal } from './components/PresetsModal';
 import { PayoutSettingsModal } from './components/PayoutSettingsModal';
+import { matchCurrentPreset } from './data/presets';
 import {
   getStoredLotteryData,
   saveStoredLotteryData,
@@ -47,6 +48,10 @@ export default function App() {
     } catch {}
     return DEFAULT_PAYOUT_CONFIG;
   });
+
+  // Current active preset detector
+  const activePreset = useMemo(() => matchCurrentPreset(formula), [formula]);
+  const activePresetName = activePreset ? activePreset.name : '🛠️ ปรับแต่งเอง (Custom)';
 
   // Modals
   const [isTicketOpen, setIsTicketOpen] = useState(false);
@@ -205,6 +210,7 @@ export default function App() {
         drawCount={draws.length}
         latestDate={latestDraw.date}
         payoutConfig={payoutConfig}
+        activePresetName={activePresetName}
       />
 
       {/* Sync Toast Notification */}
@@ -240,6 +246,7 @@ export default function App() {
             onToggleParams={() => setShowParams(prev => !prev)}
             onOpenTicket={handleOpenNextTicket}
             latestDate={latestDraw.date}
+            activePresetName={activePresetName}
           />
 
           {/* Formula Parameters Drawer */}
@@ -307,6 +314,7 @@ export default function App() {
           setFormula(newFormula);
           setShowParams(true);
         }}
+        currentFormula={formula}
       />
 
       <PayoutSettingsModal

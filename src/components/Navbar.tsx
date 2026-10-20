@@ -13,6 +13,7 @@ interface NavbarProps {
   drawCount: number;
   latestDate: string;
   payoutConfig: PayoutConfig;
+  activePresetName?: string;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -24,7 +25,8 @@ export const Navbar: React.FC<NavbarProps> = ({
   onAutoSync,
   drawCount,
   latestDate,
-  payoutConfig
+  payoutConfig,
+  activePresetName
 }) => {
   const [soundOn, setSoundOn] = useState(isSoundEnabled());
   const [time, setTime] = useState<string>('');
@@ -44,6 +46,10 @@ export const Navbar: React.FC<NavbarProps> = ({
     setSoundOn(nextState);
     if (nextState) playTerminalBeep(900, 0.08);
   };
+
+  const shortPresetName = activePresetName
+    ? activePresetName.split('(')[0].trim()
+    : 'สูตรเซียน';
 
   return (
     <nav className="border-b border-gray-800 bg-[#12161c] px-3 sm:px-6 py-2.5 flex flex-wrap justify-between items-center sticky top-0 z-40 backdrop-blur-md bg-opacity-95 shadow-md">
@@ -104,6 +110,21 @@ export const Navbar: React.FC<NavbarProps> = ({
           <span>จ่าย: {payoutConfig.direct3D}/{payoutConfig.tod3D}/{payoutConfig.direct2D}</span>
         </button>
 
+        {/* Preset Selector Pill */}
+        <button
+          onClick={() => {
+            playTerminalBeep(700);
+            onOpenPresets();
+          }}
+          title={`สูตรที่ใช้อยู่: ${activePresetName || 'สูตรเซียน'} (คลิกเพื่อเปลี่ยน)`}
+          className="flex items-center gap-1.5 bg-[#1e2329] hover:bg-[#282e37] text-gray-200 hover:text-white px-2.5 py-1.5 rounded text-xs font-medium border border-yellow-500/30 transition-all shadow-sm"
+        >
+          <Sparkles size={13} className="text-yellow-400" />
+          <span className="hidden sm:inline font-bold text-yellow-300 max-w-[130px] truncate">
+            {shortPresetName}
+          </span>
+        </button>
+
         {/* Auto Sync Button */}
         <button
           onClick={() => {
@@ -123,17 +144,6 @@ export const Navbar: React.FC<NavbarProps> = ({
           className="p-1.5 sm:p-2 rounded bg-[#1e2329] hover:bg-[#2b3139] border border-gray-700 text-gray-400 hover:text-yellow-400 transition-colors"
         >
           {soundOn ? <Volume2 size={15} /> : <VolumeX size={15} />}
-        </button>
-
-        <button
-          onClick={() => {
-            playTerminalBeep(700);
-            onOpenPresets();
-          }}
-          className="flex items-center gap-1.5 bg-[#1e2329] hover:bg-[#2b3139] text-gray-300 hover:text-white px-2.5 py-1.5 rounded text-xs font-medium border border-gray-700 transition-colors"
-        >
-          <Sparkles size={13} className="text-yellow-400" />
-          <span className="hidden sm:inline">สูตรเซียน</span>
         </button>
 
         <button
