@@ -94,24 +94,37 @@ export const PredictionHero: React.FC<PredictionHeroProps> = ({
         </div>
       )}
 
-      {/* Top Header */}
-      <div className="flex justify-between items-center mb-3">
-        <div className="flex items-center gap-1.5 flex-wrap">
-          <Zap size={14} className="text-yellow-400" />
-          <p className="text-gray-400 text-[11px] font-black uppercase tracking-wider">Next Draw Forecast</p>
-          <span className="text-[9px] font-bold text-yellow-300 bg-yellow-500/15 border border-yellow-500/30 px-2 py-0.5 rounded-full max-w-[170px] truncate" title={activePresetName}>
-            {activePresetName || 'สูตรเซียน'}
+      {/* Top Header - Strictly Single Row with No Wrapping */}
+      <div className="flex justify-between items-center gap-2 mb-2">
+        <div className="flex items-center gap-1.5 min-w-0 shrink-0">
+          <Zap size={14} className="text-yellow-400 shrink-0" />
+          <p className="text-gray-400 text-[11px] font-black uppercase tracking-wider whitespace-nowrap">
+            Next Draw Forecast
+          </p>
+        </div>
+
+        {/* Status badges guaranteed in a single row */}
+        <div className="flex items-center gap-1.5 shrink-0 whitespace-nowrap">
+          <span className="text-emerald-400 text-[10px] font-bold flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 whitespace-nowrap shrink-0">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse shrink-0"></span>
+            <span className="whitespace-nowrap">LIVE SIGNAL</span>
+          </span>
+          <span className="text-yellow-400 text-[10px] font-mono font-bold bg-yellow-400/10 px-2 py-0.5 rounded border border-yellow-400/20 flex items-center gap-1 whitespace-nowrap shrink-0">
+            <Calendar size={11} className="shrink-0" />
+            <span className="whitespace-nowrap">{nextSchedule.thai}</span>
           </span>
         </div>
-        <div className="flex items-center gap-2">
-          <span className="text-emerald-400 text-[10px] font-bold flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/30">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-            LIVE SIGNAL
-          </span>
-          <span className="text-yellow-400 text-[10px] font-mono font-bold bg-yellow-400/10 px-2 py-0.5 rounded border border-yellow-400/20 flex items-center gap-1">
-            <Calendar size={11} /> {nextSchedule.thai}
-          </span>
-        </div>
+      </div>
+
+      {/* Active Strategy Pill Row */}
+      <div className="bg-[#0e1217] border border-gray-800/80 rounded-lg px-2.5 py-1 mb-3.5 flex items-center justify-between text-[10px]">
+        <span className="text-gray-500 flex items-center gap-1 font-bold uppercase tracking-wider shrink-0">
+          <Sparkles size={11} className="text-yellow-400" />
+          สูตรที่ใช้:
+        </span>
+        <span className="font-bold text-yellow-300 truncate max-w-[220px] text-right" title={activePresetName}>
+          {activePresetName || 'สูตรเซียน'}
+        </span>
       </div>
 
       {/* Prediction Cards Grid */}
