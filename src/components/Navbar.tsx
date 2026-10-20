@@ -1,15 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { Volume2, VolumeX, Plus, RefreshCw, Download, Sparkles, Terminal, RefreshCcw, ExternalLink } from 'lucide-react';
+import { Volume2, VolumeX, Plus, RefreshCw, Download, Sparkles, Terminal, RefreshCcw, ExternalLink, Coins } from 'lucide-react';
 import { isSoundEnabled, toggleSound, playTerminalBeep } from '../utils/sound';
+import { PayoutConfig } from '../types';
 
 interface NavbarProps {
   onOpenAddModal: () => void;
   onResetData: () => void;
   onExportCSV: () => void;
   onOpenPresets: () => void;
+  onOpenPayoutSettings: () => void;
   onAutoSync: () => void;
   drawCount: number;
   latestDate: string;
+  payoutConfig: PayoutConfig;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -17,9 +20,11 @@ export const Navbar: React.FC<NavbarProps> = ({
   onResetData,
   onExportCSV,
   onOpenPresets,
+  onOpenPayoutSettings,
   onAutoSync,
   drawCount,
-  latestDate
+  latestDate,
+  payoutConfig
 }) => {
   const [soundOn, setSoundOn] = useState(isSoundEnabled());
   const [time, setTime] = useState<string>('');
@@ -86,6 +91,19 @@ export const Navbar: React.FC<NavbarProps> = ({
 
       {/* Action Buttons */}
       <div className="flex items-center gap-1.5 sm:gap-2">
+        {/* Payout Rates Setting Button */}
+        <button
+          onClick={() => {
+            playTerminalBeep(750);
+            onOpenPayoutSettings();
+          }}
+          title="คลิกเพื่อดูหรือปรับอัตราจ่าย (3ตรง 500, โต๊ด 100, 2ตัว 70)"
+          className="flex items-center gap-1 bg-[#1e2329] hover:bg-[#282e37] text-yellow-400 border border-yellow-500/30 hover:border-yellow-500/60 px-2.5 py-1.5 rounded text-xs font-mono font-bold transition-all shadow-[0_0_8px_rgba(234,179,8,0.15)]"
+        >
+          <Coins size={13} className="text-yellow-400" />
+          <span>จ่าย: {payoutConfig.direct3D}/{payoutConfig.tod3D}/{payoutConfig.direct2D}</span>
+        </button>
+
         {/* Auto Sync Button */}
         <button
           onClick={() => {

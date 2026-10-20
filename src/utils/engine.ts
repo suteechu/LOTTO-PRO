@@ -1,4 +1,4 @@
-import { DigitFormula, FormulaState, LotteryDraw, BacktestRow, StrategyMetrics, DigitFrequency, VariableId } from '../types';
+import { DigitFormula, FormulaState, LotteryDraw, BacktestRow, StrategyMetrics, DigitFrequency, VariableId, PayoutConfig, DEFAULT_PAYOUT_CONFIG } from '../types';
 import { VARIABLES } from '../data/lotteryData';
 
 export const DEFAULT_FORMULA: FormulaState = {
@@ -51,7 +51,11 @@ export function predictDigits(formula: FormulaState, latestDraw: LotteryDraw) {
   };
 }
 
-export function runBacktest(draws: LotteryDraw[], formula: FormulaState): { rows: BacktestRow[]; metrics: StrategyMetrics } {
+export function runBacktest(
+  draws: LotteryDraw[],
+  formula: FormulaState,
+  payoutConfig: PayoutConfig = DEFAULT_PAYOUT_CONFIG
+): { rows: BacktestRow[]; metrics: StrategyMetrics } {
   if (!draws || draws.length < 2) {
     return {
       rows: [],
@@ -116,14 +120,14 @@ export function runBacktest(draws: LotteryDraw[], formula: FormulaState): { rows
     if (is2BotExact) exact2BotHits++;
     if (matchedTopCount >= 1) hit1PlusTop++;
 
-    // Simulated P&L per draw:
-    // Bet size: 100 THB total (Top 3 Direct: 10 THB, Tod: 20 THB, Top 2D: 35 THB, Bot 2D: 35 THB)
-    const cost = 100;
+    // Simulated P&L per draw based on User's Payout Rates:
+    // 3 ตรง: บาทละ 500, โต๊ด: บาทละ 100, 2 ตัว: บาทละ 70
+    const cost = (payoutConfig.betDirect3D + payoutConfig.betTod3D + payoutConfig.betTop2D + payoutConfig.betBot2D) || 100;
     let payout = 0;
-    if (is3Exact) payout += 10 * 900;     // 9,000 THB
-    if (is3Tod) payout += 20 * 150;       // 3,000 THB
-    if (is2TopExact) payout += 35 * 90;   // 3,150 THB
-    if (is2BotExact) payout += 35 * 90;   // 3,150 THB
+    if (is3Exact) payout += payoutConfig.betDirect3D * payoutConfig.direct3D;     // 3ตรง (บาทละ 500)
+    if (is3Tod) payout += payoutConfig.betTod3D * payoutConfig.tod3D;           // โต๊ด (บาทละ 100)
+    if (is2TopExact) payout += payoutConfig.betTop2D * payoutConfig.direct2D;   // 2ตัวบน (บาทละ 70)
+    if (is2BotExact) payout += payoutConfig.betBot2D * payoutConfig.direct2D;   // 2ตัวล่าง (บาทละ 70)
 
     const netPnL = payout - cost;
     runningPnL += netPnL;
@@ -149,7 +153,8 @@ export function runBacktest(draws: LotteryDraw[], formula: FormulaState): { rows
   const total = rows.length;
   const anyWinCount = rows.filter(r => r.is3Exact || r.is3Tod || r.is2TopExact || r.is2BotExact).length;
   const winRate = total > 0 ? (anyWinCount / total) * 100 : 0;
-  const totalCost = total * 100;
+  const costPerDraw = (payoutConfig.betDirect3D + payoutConfig.betTod3D + payoutConfig.betTop2D + payoutConfig.betBot2D) || 100;
+  const totalCost = total * costPerDraw;
   const roi = totalCost > 0 ? (runningPnL / totalCost) * 100 : 0;
 
   const metrics: StrategyMetrics = {

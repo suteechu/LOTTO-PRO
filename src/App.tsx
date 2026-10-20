@@ -9,6 +9,7 @@ import { PnLChart } from './components/PnLChart';
 import { TicketModal } from './components/TicketModal';
 import { AddDrawModal } from './components/AddDrawModal';
 import { PresetsModal } from './components/PresetsModal';
+import { PayoutSettingsModal } from './components/PayoutSettingsModal';
 import {
   getStoredLotteryData,
   saveStoredLotteryData,
@@ -23,9 +24,11 @@ import {
   autoOptimizeFullFormula,
   calculateDigitStats
 } from './utils/engine';
-import { LotteryDraw, FormulaState, BacktestRow } from './types';
+import { LotteryDraw, FormulaState, BacktestRow, PayoutConfig, DEFAULT_PAYOUT_CONFIG } from '../src/types';
 import { playSuccessChime, playTerminalBeep } from './utils/sound';
 import { CheckCircle2 } from 'lucide-react';
+
+const PAYOUT_STORAGE_KEY = 'lotto_pro_payout_config_v1';
 
 export default function App() {
   const [draws, setDraws] = useState<LotteryDraw[]>(() => getStoredLotteryData());
@@ -34,11 +37,33 @@ export default function App() {
   const [isOptimizing, setIsOptimizing] = useState(false);
   const [syncToast, setSyncToast] = useState<string | null>(null);
 
+  // Custom Payout Rates: 3ตรง 500, โต๊ด 100, 2ตัว 70
+  const [payoutConfig, setPayoutConfig] = useState<PayoutConfig>(() => {
+    try {
+      const raw = localStorage.getItem(PAYOUT_STORAGE_KEY);
+      if (raw) {
+        return JSON.parse(raw);
+      }
+    } catch {}
+    return DEFAULT_PAYOUT_CONFIG;
+  });
+
   // Modals
   const [isTicketOpen, setIsTicketOpen] = useState(false);
   const [selectedHistoricalRow, setSelectedHistoricalRow] = useState<BacktestRow | null>(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isPresetsOpen, setIsPresetsOpen] = useState(false);
+  const [isPayoutModalOpen, setIsPayoutModalOpen] = useState(false);
+
+  // Save payout config
+  const handleSavePayoutConfig = useCallback((newCfg: PayoutConfig) => {
+    setPayoutConfig(newCfg);
+    try {
+      localStorage.setItem(PAYOUT_STORAGE_KEY, JSON.stringify(newCfg));
+    } catch {}
+    setSyncToast(`💰 อัปเดตอัตราจ่าย: 3ตรง ${newCfg.direct3D}฿ | โต๊ด ${newCfg.tod3D}฿ | 2ตัว ${newCfg.direct2D}฿ เรียบร้อย!`);
+    setTimeout(() => setSyncToast(null), 4000);
+  }, []);
 
   // Auto-sync on startup
   useEffect(() => {
@@ -59,10 +84,10 @@ export default function App() {
     return predictDigits(formula, latestDraw);
   }, [formula, latestDraw]);
 
-  // Backtest across all draws
+  // Backtest across all draws with user's customized payout rates
   const { rows, metrics } = useMemo(() => {
-    return runBacktest(draws, formula);
-  }, [draws, formula]);
+    return runBacktest(draws, formula, payoutConfig);
+  }, [draws, formula, payoutConfig]);
 
   // Volume hot / cold stats
   const volumeStats = useMemo(() => {
@@ -173,9 +198,11 @@ export default function App() {
         onResetData={handleResetData}
         onExportCSV={handleExportCSV}
         onOpenPresets={() => setIsPresetsOpen(true)}
+        onOpenPayoutSettings={() => setIsPayoutModalOpen(true)}
         onAutoSync={handleAutoSync}
         drawCount={draws.length}
         latestDate={latestDraw.date}
+        payoutConfig={payoutConfig}
       />
 
       {/* Sync Toast Notification */}
@@ -246,7 +273,7 @@ export default function App() {
         <div className="flex flex-wrap justify-between items-center max-w-[1600px] mx-auto gap-2">
           <span>LOTTO-PRO QUANT ALGORITHM TERMINAL © 2026 | Built for Analytical & Backtesting Purposes</span>
           <span className="text-gray-400">
-            Auto-Sync Engine v3.5 • Developed by Sutee
+            อัตราจ่าย: 3ตรง {payoutConfig.direct3D}฿ • โต๊ด {payoutConfig.tod3D}฿ • 2ตัว {payoutConfig.direct2D}฿
           </span>
         </div>
       </footer>
@@ -261,6 +288,7 @@ export default function App() {
         historicalRow={selectedHistoricalRow}
         nextPrediction={prediction}
         latestDate={latestDraw.date}
+        payoutConfig={payoutConfig}
       />
 
       <AddDrawModal
@@ -277,6 +305,13 @@ export default function App() {
           setFormula(newFormula);
           setShowParams(true);
         }}
+      />
+
+      <PayoutSettingsModal
+        isOpen={isPayoutModalOpen}
+        onClose={() => setIsPayoutModalOpen(false)}
+        payoutConfig={payoutConfig}
+        onSavePayoutConfig={handleSavePayoutConfig}
       />
     </div>
   );

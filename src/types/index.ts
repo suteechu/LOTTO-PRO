@@ -80,3 +80,23 @@ export interface PresetFormula {
   formula: FormulaState;
   winRateTag: string;
 }
+
+export interface PayoutConfig {
+  direct3D: number; // 3 ตรง บาทละ 500
+  tod3D: number;    // 3 โต๊ด บาทละ 100
+  direct2D: number; // 2 ตัว บาทละ 70
+  betDirect3D: number; // เงินแทง 3 ตรงต่องวด
+  betTod3D: number;    // เงินแทง โต๊ดต่องวด
+  betTop2D: number;    // เงินแทง 2 ตัวบนต่องวด
+  betBot2D: number;    // เงินแทง 2 ตัวล่างต่องวด
+}
+
+export const DEFAULT_PAYOUT_CONFIG: PayoutConfig = {
+  direct3D: 500, // 3 ตรง บาทละ 500
+  tod3D: 100,    // โต๊ด บาทละ 100
+  direct2D: 70,  // 2 ตัว บาทละ 70
+  betDirect3D: 10,
+  betTod3D: 20,
+  betTop2D: 35,
+  betBot2D: 35
+};
