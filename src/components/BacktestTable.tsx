@@ -1,15 +1,16 @@
 import React, { useState } from 'react';
 import { BacktestRow } from '../types';
-import { Search, Filter, Trophy, CheckCircle2, TrendingUp } from 'lucide-react';
+import { Search, Filter, Trophy, Ticket, ExternalLink } from 'lucide-react';
 import { playTerminalBeep } from '../utils/sound';
 
 interface BacktestTableProps {
   rows: BacktestRow[];
+  onSelectRowTicket: (row: BacktestRow) => void;
 }
 
 type FilterType = 'all' | 'exact3' | 'tod3' | 'hit2' | 'hit1' | 'miss';
 
-export const BacktestTable: React.FC<BacktestTableProps> = ({ rows }) => {
+export const BacktestTable: React.FC<BacktestTableProps> = ({ rows, onSelectRowTicket }) => {
   const [filter, setFilter] = useState<FilterType>('all');
   const [search, setSearch] = useState('');
 
@@ -50,14 +51,17 @@ export const BacktestTable: React.FC<BacktestTableProps> = ({ rows }) => {
           </span>
         </div>
 
-        {/* Search & Filters */}
+        {/* Search & Notice */}
         <div className="flex items-center gap-2">
+          <span className="hidden sm:inline-block text-[10px] text-yellow-400/80 bg-yellow-400/10 px-2 py-0.5 rounded border border-yellow-400/20">
+            💡 คลิกที่วันที่ เพื่อเปิดใบแนวทาง
+          </span>
           <div className="relative">
             <Search size={12} className="absolute left-2.5 top-2.5 text-gray-500" />
             <input
               type="text"
               placeholder="ค้นหาวันที่, ตัวเลข..."
-              className="bg-[#0e1217] border border-gray-700 rounded-lg pl-7 pr-2.5 py-1 text-xs text-white placeholder-gray-500 focus:border-yellow-500 outline-none w-36 sm:w-48"
+              className="bg-[#0e1217] border border-gray-700 rounded-lg pl-7 pr-2.5 py-1 text-xs text-white placeholder-gray-500 focus:border-yellow-500 outline-none w-36 sm:w-44"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
@@ -100,7 +104,11 @@ export const BacktestTable: React.FC<BacktestTableProps> = ({ rows }) => {
         <table className="w-full text-left border-collapse font-sans text-xs">
           <thead className="text-[10px] text-gray-400 uppercase font-black border-b border-gray-800 sticky top-0 bg-[#12161c] z-10">
             <tr>
-              <th className="px-4 py-2.5">งวดที่ / วันที่</th>
+              <th className="px-4 py-2.5">
+                <span className="flex items-center gap-1">
+                  งวดที่ / วันที่ <Ticket size={11} className="text-yellow-400" />
+                </span>
+              </th>
               <th className="px-4 py-2.5">ผลจริง (บน / ล่าง)</th>
               <th className="px-4 py-2.5">คำนวณทำนาย (Pred)</th>
               <th className="px-4 py-2.5">สถานะรางวัล</th>
@@ -117,14 +125,24 @@ export const BacktestTable: React.FC<BacktestTableProps> = ({ rows }) => {
             ) : (
               filteredRows.map((item, idx) => (
                 <tr key={idx} className="hover:bg-[#1a2028]/60 transition-colors group">
-                  {/* Date & Draw */}
-                  <td className="px-4 py-2 whitespace-nowrap">
-                    <span className="font-bold text-gray-300 group-hover:text-white font-sans text-xs">
-                      {item.date}
-                    </span>
-                    <span className="text-[9px] text-gray-500 ml-2 font-mono">
-                      #{item.drawNo}
-                    </span>
+                  {/* Interactive Date & Draw Clickable */}
+                  <td
+                    className="px-4 py-2 whitespace-nowrap cursor-pointer select-none"
+                    onClick={() => {
+                      playTerminalBeep(850, 0.06);
+                      onSelectRowTicket(item);
+                    }}
+                    title="คลิกเพื่อเปิดใบแนวทาง (Prediction Ticket) ประจำงวดนี้"
+                  >
+                    <div className="flex items-center gap-1.5 group-hover:text-yellow-400 transition-colors">
+                      <span className="font-bold text-gray-200 group-hover:text-yellow-400 font-sans text-xs group-hover:underline decoration-yellow-400/50 underline-offset-4 flex items-center gap-1">
+                        <Ticket size={12} className="text-gray-500 group-hover:text-yellow-400 shrink-0" />
+                        {item.date}
+                      </span>
+                      <span className="text-[9px] text-gray-500 font-mono bg-black/40 px-1 py-0.5 rounded border border-gray-800 group-hover:border-yellow-500/30">
+                        #{item.drawNo}
+                      </span>
+                    </div>
                   </td>
 
                   {/* Actual */}

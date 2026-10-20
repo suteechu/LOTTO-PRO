@@ -23,7 +23,7 @@ import {
   autoOptimizeFullFormula,
   calculateDigitStats
 } from './utils/engine';
-import { LotteryDraw, FormulaState } from './types';
+import { LotteryDraw, FormulaState, BacktestRow } from './types';
 import { playSuccessChime, playTerminalBeep } from './utils/sound';
 import { CheckCircle2 } from 'lucide-react';
 
@@ -36,6 +36,7 @@ export default function App() {
 
   // Modals
   const [isTicketOpen, setIsTicketOpen] = useState(false);
+  const [selectedHistoricalRow, setSelectedHistoricalRow] = useState<BacktestRow | null>(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isPresetsOpen, setIsPresetsOpen] = useState(false);
 
@@ -120,6 +121,18 @@ export default function App() {
     }, 700);
   }, [draws]);
 
+  // Click to open Ticket from Historical row
+  const handleOpenHistoricalTicket = useCallback((row: BacktestRow) => {
+    setSelectedHistoricalRow(row);
+    setIsTicketOpen(true);
+  }, []);
+
+  // Click to open Ticket from Next Prediction Hero
+  const handleOpenNextTicket = useCallback(() => {
+    setSelectedHistoricalRow(null);
+    setIsTicketOpen(true);
+  }, []);
+
   // Export CSV
   const handleExportCSV = useCallback(() => {
     if (rows.length === 0) return;
@@ -196,7 +209,7 @@ export default function App() {
             onAutoTune={handleAutoTune}
             showParams={showParams}
             onToggleParams={() => setShowParams(prev => !prev)}
-            onOpenTicket={() => setIsTicketOpen(true)}
+            onOpenTicket={handleOpenNextTicket}
             latestDate={latestDraw.date}
           />
 
@@ -220,7 +233,10 @@ export default function App() {
 
           {/* Backtest Order History Table */}
           <div className="flex-1">
-            <BacktestTable rows={rows} />
+            <BacktestTable
+              rows={rows}
+              onSelectRowTicket={handleOpenHistoricalTicket}
+            />
           </div>
         </div>
       </main>
@@ -238,8 +254,12 @@ export default function App() {
       {/* Modals */}
       <TicketModal
         isOpen={isTicketOpen}
-        onClose={() => setIsTicketOpen(false)}
-        prediction={prediction}
+        onClose={() => {
+          setIsTicketOpen(false);
+          setSelectedHistoricalRow(null);
+        }}
+        historicalRow={selectedHistoricalRow}
+        nextPrediction={prediction}
         latestDate={latestDraw.date}
       />
 
