@@ -2,11 +2,11 @@ import { DigitFormula, FormulaState, LotteryDraw, BacktestRow, StrategyMetrics, 
 import { VARIABLES } from '../data/lotteryData';
 
 export const DEFAULT_FORMULA: FormulaState = {
-  digit1: { v1: 'u', v2: 'bu', c: 8 },
-  digit2: { v1: 'h', v2: 't', c: 6 },
-  digit3: { v1: 'h', v2: 't', c: 5 },
-  bot1: { v1: 'h', v2: 'bu', c: 3 },
-  bot2: { v1: 't', v2: 'bt', c: 7 }
+  digit1: { v1: 'h', v2: 'bt', c: 5 },
+  digit2: { v1: 'h', v2: 'u', c: 1 },
+  digit3: { v1: 'h', v2: 'none', c: 7 },
+  bot1: { v1: 'h', v2: 'h', c: 0 },
+  bot2: { v1: 'h', v2: 'none', c: 1 }
 };
 
 export function getVariableValues(top3: string, bot2: string): Record<VariableId, number> {

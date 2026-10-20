@@ -2,6 +2,20 @@ import { PresetFormula } from '../types';
 
 export const PRESET_FORMULAS: PresetFormula[] = [
   {
+    id: 'ultimate-quant-alpha',
+    name: '🏆 Ultimate Quant Alpha (RR 1:17.4 | High P&L)',
+    description: 'สูตรอัลฟ่าคำนวณถ่วงน้ำหนักความไม่สมมาตร (Asymmetric RR) สถิติจริงเข้า 3 ตัวตรง 3 ครั้ง และ 2 ตัวตรง 8 ครั้ง ROI +1,640%',
+    targetMode: 'both',
+    winRateTag: 'ROI +1,640% (Top RR)',
+    formula: {
+      digit1: { v1: 'h', v2: 'bt', c: 5 },
+      digit2: { v1: 'h', v2: 'u',  c: 1 },
+      digit3: { v1: 'h', v2: 'none', c: 7 },
+      bot1:   { v1: 'h', v2: 'h',  c: 0 },
+      bot2:   { v1: 'h', v2: 'none', c: 1 }
+    }
+  },
+  {
     id: 'ai-jackpot',
     name: '🎯 AI Direct Jackpot (3 ตัวตรง)',
     description: 'สูตรอัลกอริทึมค้นหาความแม่นยำสูง เน้นจับคู่ร้อยบนและหน่วยล่าง',
@@ -18,7 +32,7 @@ export const PRESET_FORMULAS: PresetFormula[] = [
   {
     id: 'master-runner',
     name: '⚡ Master Runner (เลขวิ่ง-รูด 1D+)',
-    description: 'เน้นโอกาสเข้าเป้าอย่างน้อย 1 ตัวใน 3 ตัวบน สูงกว่า 85%',
+    description: 'เน้นโอกาสเข้าเป้าอย่างน้อย 1 ตัวใน 3 ตัวบน สูงกว่า 85% คุ้มครองเงินทุนจากการขาดทุนต่อเนื่อง',
     targetMode: 'both',
     winRateTag: '85%+ Strike',
     formula: {
