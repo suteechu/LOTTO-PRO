@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Volume2, VolumeX, Plus, RefreshCw, Download, Sparkles, Terminal, RefreshCcw } from 'lucide-react';
+import { Volume2, VolumeX, Plus, RefreshCw, Download, Sparkles, Terminal, RefreshCcw, ExternalLink } from 'lucide-react';
 import { isSoundEnabled, toggleSound, playTerminalBeep } from '../utils/sound';
 
 interface NavbarProps {
@@ -61,15 +61,26 @@ export const Navbar: React.FC<NavbarProps> = ({
         </div>
       </div>
 
-      {/* Center live metrics */}
-      <div className="hidden lg:flex items-center gap-4 bg-[#1a1f26] border border-gray-800 px-3 py-1 rounded-md text-xs font-mono">
+      {/* Center live metrics & Thairath Link */}
+      <div className="hidden lg:flex items-center gap-3 bg-[#1a1f26] border border-gray-800 px-3 py-1 rounded-md text-xs font-mono">
         <div className="flex items-center gap-1.5 text-gray-400">
           <Terminal size={12} className="text-yellow-400" />
           <span>DATASET: <strong className="text-white">{drawCount} งวด</strong></span>
         </div>
         <div className="h-3 w-px bg-gray-700" />
+        <a
+          href="https://www.thairath.co.th/lottery/archive"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-gray-400 hover:text-yellow-400 flex items-center gap-1 transition-colors text-[11px]"
+          title="เปิดตรวจสอบสถิติหวยย้อนหลัง Thairath.co.th"
+        >
+          <span>อ้างอิง: ไทยรัฐ</span>
+          <ExternalLink size={11} />
+        </a>
+        <div className="h-3 w-px bg-gray-700" />
         <div className="text-gray-400">
-          TIME (BKK): <strong className="text-yellow-400">{time || '--:--:--'}</strong>
+          BKK: <strong className="text-yellow-400">{time || '--:--:--'}</strong>
         </div>
       </div>
 
@@ -81,7 +92,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             playTerminalBeep(900);
             onAutoSync();
           }}
-          title="ซิงค์และตรวจงวดใหม่อัตโนมัติ"
+          title="ซิงค์และตรวจงวดใหม่อัตโนมัติตามไทยรัฐ"
           className="flex items-center gap-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-2.5 py-1.5 rounded text-xs font-bold transition-all"
         >
           <RefreshCcw size={13} className="animate-spin-hover" />
