@@ -171,7 +171,7 @@ export const PayoutSettingsModal: React.FC<PayoutSettingsModalProps> = ({
             className="flex items-center gap-1 text-xs text-gray-400 hover:text-white px-3 py-1.5 rounded bg-gray-800/80 hover:bg-gray-800 transition-colors"
           >
             <RotateCcw size={12} />
-            <span>รีเซ็ตมาตรฐาน (500/100/70)</span>
+            <span>รีเซ็ตมาตรฐาน (งวดละ 200฿)</span>
           </button>
 
           <button

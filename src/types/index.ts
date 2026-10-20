@@ -85,18 +85,18 @@ export interface PayoutConfig {
   direct3D: number; // 3 ตรง บาทละ 500
   tod3D: number;    // 3 โต๊ด บาทละ 100
   direct2D: number; // 2 ตัว บาทละ 70
-  betDirect3D: number; // เงินแทง 3 ตรงต่องวด
-  betTod3D: number;    // เงินแทง โต๊ดต่องวด
-  betTop2D: number;    // เงินแทง 2 ตัวบนต่องวด
-  betBot2D: number;    // เงินแทง 2 ตัวล่างต่องวด
+  betDirect3D: number; // แทง 3 ตรง (ค่าเริ่มต้น 25 บาท)
+  betTod3D: number;    // แทง โต๊ด (ค่าเริ่มต้น 25 บาท)
+  betTop2D: number;    // แทง 2 บน (ค่าเริ่มต้น 75 บาท)
+  betBot2D: number;    // แทง 2 ล่าง (ค่าเริ่มต้น 75 บาท)
 }
 
 export const DEFAULT_PAYOUT_CONFIG: PayoutConfig = {
   direct3D: 500, // 3 ตรง บาทละ 500
   tod3D: 100,    // โต๊ด บาทละ 100
   direct2D: 70,  // 2 ตัว บาทละ 70
-  betDirect3D: 10,
-  betTod3D: 20,
-  betTop2D: 35,
-  betBot2D: 35
-};
+  betDirect3D: 25, // แทง 3 ตรง: 25 บาท
+  betTod3D: 25,    // แทง โต๊ด: 25 บาท
+  betTop2D: 75,    // แทง 2 บน: 75 บาท
+  betBot2D: 75     // แทง 2 ล่าง: 75 บาท
+}; // รวมงวดละ 200 บาท
