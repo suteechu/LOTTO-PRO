@@ -82,23 +82,58 @@ export default function App() {
     }
   }, []);
 
+  // Selected Year Filter ('all' | '2569' | '2568')
+  const [selectedYear, setSelectedYear] = useState<string>('all');
+
+  // Year counts
+  const yearCounts = useMemo(() => {
+    let count69 = 0;
+    let count68 = 0;
+    draws.forEach(d => {
+      if (d.date.includes(' 69') || d.date.endsWith('69')) count69++;
+      else if (d.date.includes(' 68') || d.date.endsWith('68')) count68++;
+    });
+    return [
+      { id: 'all', label: 'ทั้งหมด', count: draws.length },
+      { id: '2569', label: 'ปี 2569', count: count69 },
+      { id: '2568', label: 'ปี 2568', count: count68 }
+    ];
+  }, [draws]);
+
+  // Active draws filtered by selected year (plus 1 previous draw as input)
+  const activeDraws = useMemo(() => {
+    if (selectedYear === 'all') return draws;
+    const shortYear = selectedYear.slice(-2); // '69' or '68'
+    const yearIndices = draws
+      .map((d, idx) => (d.date.includes(` ${shortYear}`) || d.date.endsWith(shortYear) ? idx : -1))
+      .filter(idx => idx !== -1);
+
+    if (yearIndices.length === 0) return draws;
+
+    const minIdx = yearIndices[0];
+    const maxIdx = yearIndices[yearIndices.length - 1];
+    // Include 1 draw right after maxIdx for previous draw reference
+    const endIdx = maxIdx + 1 < draws.length ? maxIdx + 2 : draws.length;
+    return draws.slice(minIdx, endIdx);
+  }, [draws, selectedYear]);
+
   // Latest draw is index 0
   const latestDraw = draws[0] || INITIAL_LOTTERY_DATA[0];
 
-  // Prediction for next draw
+  // Prediction for next draw (always forecasts from the true latest draw)
   const prediction = useMemo(() => {
     return predictDigits(formula, latestDraw);
   }, [formula, latestDraw]);
 
-  // Backtest across all draws with user's customized payout rates
+  // Backtest across active draws with user's customized payout rates
   const { rows, metrics } = useMemo(() => {
-    return runBacktest(draws, formula, payoutConfig);
-  }, [draws, formula, payoutConfig]);
+    return runBacktest(activeDraws, formula, payoutConfig);
+  }, [activeDraws, formula, payoutConfig]);
 
-  // Volume hot / cold stats
+  // Volume hot / cold stats for active draws
   const volumeStats = useMemo(() => {
-    return calculateDigitStats(draws, 'top3');
-  }, [draws]);
+    return calculateDigitStats(activeDraws, 'top3');
+  }, [activeDraws]);
 
   // Manual Trigger Auto Sync
   const handleAutoSync = useCallback(() => {
@@ -144,15 +179,16 @@ export default function App() {
     playTerminalBeep(900, 0.1);
 
     setTimeout(() => {
-      const optimized = autoOptimizeFullFormula(draws, payoutConfig);
+      const optimized = autoOptimizeFullFormula(activeDraws, payoutConfig);
       setFormula(optimized);
       setIsOptimizing(false);
       setShowParams(true);
       playSuccessChime();
-      setSyncToast('🤖 AI Auto-Tune สำเร็จ! ค้นพบสูตรที่เข้าเป้า 3 ตัวตรง & 2 ตัวบน-ล่าง สูงสุดเรียบร้อยแล้ว');
+      const yearLabel = selectedYear === 'all' ? 'ทุกงวด' : `ปี ${selectedYear}`;
+      setSyncToast(`🤖 AI Auto-Tune สำเร็จ! ค้นพบสูตรที่เข้าเป้าสูงสุดสำหรับ ${yearLabel} เรียบร้อยแล้ว`);
       setTimeout(() => setSyncToast(null), 4000);
     }, 700);
-  }, [draws, payoutConfig]);
+  }, [activeDraws, payoutConfig, selectedYear]);
 
   // Click to open Ticket from Historical row
   const handleOpenHistoricalTicket = useCallback((row: BacktestRow) => {
@@ -225,12 +261,15 @@ export default function App() {
         </div>
       )}
 
-      {/* Ticker strip */}
+      {/* Ticker strip with Year Filter */}
       <TickerBar
         latestDraw={latestDraw}
         metrics={metrics}
         hotZone={volumeStats.hotZone}
         coldZone={volumeStats.coldZone}
+        selectedYear={selectedYear}
+        onSelectYear={setSelectedYear}
+        yearCounts={yearCounts}
       />
 
       {/* Main Terminal Dashboard */}
@@ -260,7 +299,7 @@ export default function App() {
           )}
 
           {/* Hot / Cold Volume */}
-          <HotColdAnalytics draws={draws} />
+          <HotColdAnalytics draws={activeDraws} />
         </div>
 
         {/* Right Column (Backtesting & Charts) */}
