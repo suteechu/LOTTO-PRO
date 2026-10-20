@@ -220,12 +220,19 @@ export const BacktestTable: React.FC<BacktestTableProps> = ({ rows, onSelectRowT
                         </span>
                       )}
                       {!item.is3Exact && !item.is3Tod && !item.is2TopExact && !item.is2BotExact && item.matchedTopCount > 0 && (
-                        <span className="text-[10px] font-bold text-blue-400">
+                        <span className="text-[10px] font-bold text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded border border-blue-500/20">
                           เข้า {item.matchedTopCount} ตัวบน
                         </span>
                       )}
-                      {!item.is3Exact && !item.is3Tod && !item.is2TopExact && !item.is2BotExact && item.matchedTopCount === 0 && (
-                        <span className="text-gray-600 text-[10px] font-medium">-</span>
+                      {!item.is3Exact && !item.is3Tod && !item.is2TopExact && !item.is2BotExact && item.matchedBotCount > 0 && (
+                        <span className="text-[10px] font-bold text-teal-400 bg-teal-500/10 px-2 py-0.5 rounded border border-teal-500/20">
+                          เข้า {item.matchedBotCount} ตัวล่าง
+                        </span>
+                      )}
+                      {!item.is3Exact && !item.is3Tod && !item.is2TopExact && !item.is2BotExact && item.matchedTopCount === 0 && item.matchedBotCount === 0 && (
+                        <span className="text-gray-500 text-[10px] font-medium bg-gray-900/60 px-2 py-0.5 rounded border border-gray-800">
+                          หลุดเป้า
+                        </span>
                       )}
                     </div>
                   </td>

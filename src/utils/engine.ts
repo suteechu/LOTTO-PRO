@@ -231,19 +231,137 @@ export function optimizeDigit(
   };
 }
 
-export function autoOptimizeFullFormula(draws: LotteryDraw[]): FormulaState {
-  const d1 = optimizeDigit(draws, 'top1');
-  const d2 = optimizeDigit(draws, 'top2');
-  const d3 = optimizeDigit(draws, 'top3');
-  const b1 = optimizeDigit(draws, 'bot1');
-  const b2 = optimizeDigit(draws, 'bot2');
+export function autoOptimizeFullFormula(
+  draws: LotteryDraw[],
+  payoutConfig: PayoutConfig = DEFAULT_PAYOUT_CONFIG
+): FormulaState {
+  if (!draws || draws.length < 2) return DEFAULT_FORMULA;
+
+  const validDraws = draws.slice(0, -1);
+  const total = validDraws.length;
+  const varList: VariableId[] = ['h', 't', 'u', 'bt', 'bu', 'none'];
+
+  // Step 1: Optimize 2D Top (d2 and d3) jointly to maximize 2-digit direct hits
+  let best2TopHits = -1;
+  let bestD2: DigitFormula = { v1: 'h', v2: 'u', c: 1 };
+  let bestD3: DigitFormula = { v1: 'h', v2: 'none', c: 7 };
+
+  for (const v1 of varList) {
+    for (const v2 of varList) {
+      for (let c1 = 0; c1 <= 9; c1++) {
+        const d2: DigitFormula = { v1, v2, c: c1 };
+        for (const v3 of varList) {
+          for (let c2 = 0; c2 <= 9; c2++) {
+            const d3: DigitFormula = { v1: v3, v2: 'none', c: c2 };
+            let hits = 0;
+            for (let i = 0; i < total; i++) {
+              const cur = validDraws[i];
+              const prev = draws[i + 1];
+              const p2 = calculateDigit(d2, prev.top3, prev.bot2);
+              const p3 = calculateDigit(d3, prev.top3, prev.bot2);
+              if (`${p2}${p3}` === cur.top3.slice(1)) hits++;
+            }
+            if (hits > best2TopHits) {
+              best2TopHits = hits;
+              bestD2 = d2;
+              bestD3 = d3;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  // Step 2: Optimize 2D Bot (b1 and b2) jointly to maximize 2-digit bottom hits
+  let best2BotHits = -1;
+  let bestB1: DigitFormula = { v1: 'h', v2: 'h', c: 0 };
+  let bestB2: DigitFormula = { v1: 'h', v2: 'none', c: 1 };
+
+  for (const v1 of varList) {
+    for (const v2 of varList) {
+      for (let c1 = 0; c1 <= 9; c1++) {
+        const b1: DigitFormula = { v1, v2, c: c1 };
+        for (const v3 of varList) {
+          for (let c2 = 0; c2 <= 9; c2++) {
+            const b2: DigitFormula = { v1: v3, v2: 'none', c: c2 };
+            let hits = 0;
+            for (let i = 0; i < total; i++) {
+              const cur = validDraws[i];
+              const prev = draws[i + 1];
+              const pb1 = calculateDigit(b1, prev.top3, prev.bot2);
+              const pb2 = calculateDigit(b2, prev.top3, prev.bot2);
+              if (`${pb1}${pb2}` === cur.bot2) hits++;
+            }
+            if (hits > best2BotHits) {
+              best2BotHits = hits;
+              bestB1 = b1;
+              bestB2 = b2;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  // Step 3: Optimize D1 to maximize 3D Direct, 3D Tod, and Total Profit
+  let bestScore = -Infinity;
+  let bestD1: DigitFormula = { v1: 'h', v2: 'bt', c: 5 };
+
+  for (const v1 of varList) {
+    for (const v2 of varList) {
+      for (let c = 0; c <= 9; c++) {
+        const d1: DigitFormula = { v1, v2, c };
+        let e3 = 0, t3 = 0, e2t = 0, e2b = 0;
+        let pnl = 0;
+
+        for (let i = 0; i < total; i++) {
+          const cur = validDraws[i];
+          const prev = draws[i + 1];
+
+          const p1 = calculateDigit(d1, prev.top3, prev.bot2);
+          const p2 = calculateDigit(bestD2, prev.top3, prev.bot2);
+          const p3 = calculateDigit(bestD3, prev.top3, prev.bot2);
+          const predTop = `${p1}${p2}${p3}`;
+
+          const pb1 = calculateDigit(bestB1, prev.top3, prev.bot2);
+          const pb2 = calculateDigit(bestB2, prev.top3, prev.bot2);
+          const predBot = `${pb1}${pb2}`;
+
+          const is3Exact = predTop === cur.top3;
+          const is3Tod = !is3Exact && predTop.split('').sort().join('') === cur.top3.split('').sort().join('');
+          const is2Top = predTop.slice(1) === cur.top3.slice(1);
+          const is2Bot = predBot === cur.bot2;
+
+          if (is3Exact) e3++;
+          if (is3Tod) t3++;
+          if (is2Top) e2t++;
+          if (is2Bot) e2b++;
+
+          let win = 0;
+          if (is3Exact) win += payoutConfig.betDirect3D * payoutConfig.direct3D;
+          if (is3Tod) win += payoutConfig.betTod3D * payoutConfig.tod3D;
+          if (is2Top) win += payoutConfig.betTop2D * payoutConfig.direct2D;
+          if (is2Bot) win += payoutConfig.betBot2D * payoutConfig.direct2D;
+
+          const cost = (payoutConfig.betDirect3D + payoutConfig.betTod3D + payoutConfig.betTop2D + payoutConfig.betBot2D) || 100;
+          pnl += (win - cost);
+        }
+
+        const score = e3 * 10000 + t3 * 2000 + e2t * 500 + e2b * 500 + pnl;
+        if (score > bestScore) {
+          bestScore = score;
+          bestD1 = d1;
+        }
+      }
+    }
+  }
 
   return {
-    digit1: d1.bestFormula,
-    digit2: d2.bestFormula,
-    digit3: d3.bestFormula,
-    bot1: b1.bestFormula,
-    bot2: b2.bestFormula
+    digit1: bestD1,
+    digit2: bestD2,
+    digit3: bestD3,
+    bot1: bestB1,
+    bot2: bestB2
   };
 }
 

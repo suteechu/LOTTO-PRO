@@ -138,13 +138,15 @@ export default function App() {
     playTerminalBeep(900, 0.1);
 
     setTimeout(() => {
-      const optimized = autoOptimizeFullFormula(draws);
+      const optimized = autoOptimizeFullFormula(draws, payoutConfig);
       setFormula(optimized);
       setIsOptimizing(false);
       setShowParams(true);
       playSuccessChime();
+      setSyncToast('🤖 AI Auto-Tune สำเร็จ! ค้นพบสูตรที่เข้าเป้า 3 ตัวตรง & 2 ตัวบน-ล่าง สูงสุดเรียบร้อยแล้ว');
+      setTimeout(() => setSyncToast(null), 4000);
     }, 700);
-  }, [draws]);
+  }, [draws, payoutConfig]);
 
   // Click to open Ticket from Historical row
   const handleOpenHistoricalTicket = useCallback((row: BacktestRow) => {
