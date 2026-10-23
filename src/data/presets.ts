@@ -1,87 +1,110 @@
-import { PresetFormula, FormulaState } from '../types';
+import { PresetFormula, FormulaState, DigitFormula } from '../types';
 
 export const PRESET_FORMULAS: PresetFormula[] = [
   {
-    id: 'ultimate-quant-alpha',
-    name: '🏆 Ultimate Quant Alpha (RR 1:17.4 | High P&L)',
-    description: 'สูตรอัลฟ่าคำนวณถ่วงน้ำหนักความไม่สมมาตร (Asymmetric RR) สถิติจริงเข้า 3 ตัวตรง 3 งวด และ 2 ตัวตรง 8 งวด ROI +1,640%',
+    id: 'god-tier-quantum-alpha',
+    name: '👑 God-Tier Quantum Alpha (RR 1:18.9 | 3ตรง 6 งวด)',
+    description: 'สูตรควอนตัม 3 ตัวแปรคูณไขว้ (Cross-Product) สถิติจริง 38 งวด เข้า 3 ตัวตรง 6 งวด, 2 ตัวบน 6 งวด, 2 ตัวล่าง 7 งวด กำไรสุทธิ +135,650฿ (Win Rate 34.2%)',
     targetMode: 'both',
-    winRateTag: 'ROI +1,640% (Top RR)',
+    winRateTag: 'RR 1:18.9 | ROI +1,785%',
     formula: {
-      digit1: { v1: 'h', v2: 'bt', c: 5 },
-      digit2: { v1: 'h', v2: 'u',  c: 1 },
-      digit3: { v1: 'h', v2: 'none', c: 7 },
-      bot1:   { v1: 'h', v2: 'h',  c: 0 },
-      bot2:   { v1: 'h', v2: 'none', c: 1 }
+      digit1: { v1: 'hu', v2: 'btu', v3: 'tbt', c: 2 },
+      digit2: { v1: 'ht', v2: 'tbu', v3: 'ubu', c: 0 },
+      digit3: { v1: 't', v2: 'u', v3: 'bt', c: 7 },
+      bot1:   { v1: 'btu', v2: 'tbu', v3: 'tbu', c: 6 },
+      bot2:   { v1: 'h', v2: 'bu', v3: 'bu', c: 5 }
     }
   },
   {
-    id: 'ai-jackpot',
-    name: '🎯 AI Direct Jackpot (3 ตัวตรง)',
-    description: 'สูตรอัลกอริทึมค้นหาความแม่นยำสูง เน้นจับคู่ร้อยบนและหน่วยล่าง',
+    id: 'hyper-matrix-3d',
+    name: '⚡ Hyper-Matrix 3D Alpha (RR 1:18.9 | เน้น 3 ตัวตรง)',
+    description: 'สูตรเมทริกซ์จับคู่หลักสิบและผลคูณไขว้ เข้า 3 ตัวตรง 6 งวด และ 2 ตัวล่าง 7 งวด ทำกำไรสุทธิ +135,650฿',
     targetMode: 'top3',
-    winRateTag: 'High Payout',
+    winRateTag: 'RR 1:18.9 | 6x Jackpot',
     formula: {
-      digit1: { v1: 'u', v2: 'bu', c: 8 },
-      digit2: { v1: 'h', v2: 't', c: 6 },
-      digit3: { v1: 'h', v2: 't', c: 5 },
-      bot1: { v1: 'h', v2: 'bt', c: 4 },
-      bot2: { v1: 'u', v2: 'bu', c: 2 }
+      digit1: { v1: 't', v2: 't', v3: 'hu', c: 4 },
+      digit2: { v1: 'bt', v2: 'btu', v3: 'hbt', c: 9 },
+      digit3: { v1: 'u', v2: 'ht', v3: 'none', c: 3 },
+      bot1:   { v1: 'btu', v2: 'tbu', v3: 'tbu', c: 6 },
+      bot2:   { v1: 'h', v2: 'bu', v3: 'bu', c: 5 }
     }
   },
   {
-    id: 'master-runner',
-    name: '⚡ Master Runner (เลขวิ่ง-รูด 1D+)',
-    description: 'เน้นโอกาสเข้าเป้าอย่างน้อย 1 ตัวใน 3 ตัวบน สูงกว่า 85% คุ้มครองเงินทุนจากการขาดทุนต่อเนื่อง',
+    id: 'omni-prize-quantum',
+    name: '💎 Omni-Prize Quantum (ครบทุกรางวัล: ตรง+โต๊ด+บน+ล่าง)',
+    description: 'เก็บครบทุกสถานะรางวัล (3ตรง 5 งวด, 3โต๊ด 1 งวด, 2บน 6 งวด, 2ล่าง 7 งวด) พร้อมอัตราเลขวิ่งเข้าเป้าสูงถึง 55.3%',
     targetMode: 'both',
-    winRateTag: '85%+ Strike',
+    winRateTag: 'RR 1:17.5 | 55% Strike',
     formula: {
-      digit1: { v1: 't', v2: 'bu', c: 3 },
-      digit2: { v1: 'u', v2: 'bt', c: 7 },
-      digit3: { v1: 'h', v2: 'u', c: 1 },
-      bot1: { v1: 't', v2: 'u', c: 5 },
-      bot2: { v1: 'bt', v2: 'bu', c: 9 }
+      digit1: { v1: 'u', v2: 'hbu', v3: 'none', c: 6 },
+      digit2: { v1: 'ht', v2: 'tbu', v3: 'ubu', c: 0 },
+      digit3: { v1: 't', v2: 'u', v3: 'bt', c: 7 },
+      bot1:   { v1: 'btu', v2: 'tbu', v3: 'tbu', c: 6 },
+      bot2:   { v1: 'h', v2: 'bu', v3: 'bu', c: 5 }
     }
   },
   {
-    id: 'bottom-cashflow',
-    name: '💰 2-Digit Cashflow (เน้น 2 ตัวล่าง)',
-    description: 'วิเคราะห์การวนรอบของเลขท้าย 2 ตัว หมุนเวียนทุนสม่ำเสมอ',
-    targetMode: 'bot2',
-    winRateTag: 'Steady Yield',
-    formula: {
-      digit1: { v1: 'h', v2: 'none', c: 4 },
-      digit2: { v1: 't', v2: 'none', c: 2 },
-      digit3: { v1: 'u', v2: 'none', c: 8 },
-      bot1: { v1: 'bt', v2: 'u', c: 6 },
-      bot2: { v1: 'bu', v2: 'h', c: 1 }
-    }
-  },
-  {
-    id: 'stat-momentum',
-    name: '📊 Statistical Momentum (ค่าเฉลี่ยสถิติ)',
-    description: 'กระจายน้ำหนักตัวแปรบนและล่าง เพื่อความสมดุลของการกระจายตัว',
+    id: 'dual-2d-sniper',
+    name: '🚀 Dual-2D Cash Sniper (2 ตัวบน 7 งวด + ล่าง 7 งวด)',
+    description: 'เน้นกระแสเงินสดความถี่สูง เข้า 2 ตัวบน 7 งวด, 2 ตัวล่าง 7 งวด (รวม 14 ครั้ง) และพ่วงแจ็กพอต 3 ตัวตรงอีก 5 งวด',
     targetMode: 'both',
-    winRateTag: 'Balanced',
+    winRateTag: 'RR 1:17.9 | 14x 2D Hits',
     formula: {
-      digit1: { v1: 'h', v2: 'bt', c: 9 },
-      digit2: { v1: 't', v2: 'bu', c: 4 },
-      digit3: { v1: 'u', v2: 'h', c: 2 },
-      bot1: { v1: 'h', v2: 't', c: 1 },
-      bot2: { v1: 'bt', v2: 'bu', c: 7 }
+      digit1: { v1: 'u', v2: 'bu', v3: 'tbu', c: 2 },
+      digit2: { v1: 'bu', v2: 'hbt', v3: 'hbu', c: 6 },
+      digit3: { v1: 'h', v2: 'bu', v3: 'ht', c: 7 },
+      bot1:   { v1: 'btu', v2: 'tbu', v3: 'tbu', c: 6 },
+      bot2:   { v1: 'h', v2: 'bu', v3: 'bu', c: 5 }
+    }
+  },
+  {
+    id: 'linear-3var-alpha',
+    name: '📐 Pure Linear 3-Factor (บวก 3 ตัวแปรล้วน ไม่ใช้คูณ)',
+    description: 'สูตรบวกเชิงเส้น 3 ตัวแปรคำนวณมือได้ง่าย เข้า 3 ตรง 4 งวด, 3 โต๊ด 1 งวด, 2 บน 7 งวด, 2 ล่าง 6 งวด',
+    targetMode: 'both',
+    winRateTag: 'RR 1:15.9 | Easy Calc',
+    formula: {
+      digit1: { v1: 'h', v2: 'h', v3: 't', c: 3 },
+      digit2: { v1: 'bt', v2: 'bu', v3: 'bu', c: 1 },
+      digit3: { v1: 'bt', v2: 'bt', v3: 'bt', c: 0 },
+      bot1:   { v1: 'h', v2: 't', v3: 'bt', c: 8 },
+      bot2:   { v1: 'h', v2: 'bu', v3: 'bu', c: 5 }
+    }
+  },
+  {
+    id: 'ultimate-quant-alpha',
+    name: '🏆 Classic Quant Alpha (สูตรดั้งเดิม 2 ตัวแปร)',
+    description: 'สูตรดั้งเดิมใช้เพียง 2 ตัวแปร สถิติเข้า 3 ตัวตรง 3 งวด และ 2 ตัวตรง 8 งวด',
+    targetMode: 'both',
+    winRateTag: 'RR 1:10.5 | Classic',
+    formula: {
+      digit1: { v1: 'h', v2: 'bt', v3: 'none', c: 5 },
+      digit2: { v1: 'h', v2: 'u',  v3: 'none', c: 1 },
+      digit3: { v1: 'h', v2: 'none', v3: 'none', c: 7 },
+      bot1:   { v1: 'h', v2: 'h',  v3: 'none', c: 0 },
+      bot2:   { v1: 'h', v2: 'none', v3: 'none', c: 1 }
     }
   }
 ];
+
+function isSameDigitFormula(a: DigitFormula, b: DigitFormula): boolean {
+  return (
+    a.v1 === b.v1 &&
+    a.v2 === b.v2 &&
+    (a.v3 || 'none') === (b.v3 || 'none') &&
+    a.c === b.c
+  );
+}
 
 export function matchCurrentPreset(formula: FormulaState): PresetFormula | null {
   for (const preset of PRESET_FORMULAS) {
     const pf = preset.formula;
     if (
-      pf.digit1.v1 === formula.digit1.v1 && pf.digit1.v2 === formula.digit1.v2 && pf.digit1.c === formula.digit1.c &&
-      pf.digit2.v1 === formula.digit2.v1 && pf.digit2.v2 === formula.digit2.v2 && pf.digit2.c === formula.digit2.c &&
-      pf.digit3.v1 === formula.digit3.v1 && pf.digit3.v2 === formula.digit3.v2 && pf.digit3.c === formula.digit3.c &&
-      pf.bot1.v1 === formula.bot1.v1 && pf.bot1.v2 === formula.bot1.v2 && pf.bot1.c === formula.bot1.c &&
-      pf.bot2.v1 === formula.bot2.v1 && pf.bot2.v2 === formula.bot2.v2 && pf.bot2.c === formula.bot2.c
+      isSameDigitFormula(pf.digit1, formula.digit1) &&
+      isSameDigitFormula(pf.digit2, formula.digit2) &&
+      isSameDigitFormula(pf.digit3, formula.digit3) &&
+      isSameDigitFormula(pf.bot1, formula.bot1) &&
+      isSameDigitFormula(pf.bot2, formula.bot2)
     ) {
       return preset;
     }

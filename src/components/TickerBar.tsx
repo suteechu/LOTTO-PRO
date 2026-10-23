@@ -107,9 +107,13 @@ export const TickerBar: React.FC<TickerBarProps> = ({
 
       <div className="h-3 w-px bg-gray-800 shrink-0" />
 
-      {/* Cumulative Return */}
-      <div className="flex items-center gap-1.5 shrink-0">
-        <span className="text-gray-400">SIMULATED P&L:</span>
+      {/* Cumulative Return & RR */}
+      <div className="flex items-center gap-2 shrink-0">
+        <span className="text-gray-400">RR:</span>
+        <span className="font-bold text-yellow-400 bg-yellow-500/10 border border-yellow-500/30 px-1.5 py-0.5 rounded">
+          1 : {metrics.riskRewardRatio.toFixed(1)}
+        </span>
+        <span className="text-gray-400 ml-1">P&L:</span>
         <span className={`font-bold ${metrics.totalProfit >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
           {metrics.totalProfit >= 0 ? '+' : ''}{metrics.totalProfit.toLocaleString()} THB ({metrics.roi >= 0 ? '+' : ''}{metrics.roi.toFixed(1)}%)
         </span>

@@ -6,6 +6,16 @@ export const VARIABLES: VariableDef[] = [
   { id: 'u', label: 'หน่วยบน (U)', short: 'U', description: 'เลขหลักหน่วย รางวัลที่ 1 งวดก่อน' },
   { id: 'bt', label: 'สิบล่าง (BT)', short: 'BT', description: 'เลขหลักสิบ 2 ตัวท้ายงวดก่อน' },
   { id: 'bu', label: 'หน่วยล่าง (BU)', short: 'BU', description: 'เลขหลักหน่วย 2 ตัวท้ายงวดก่อน' },
+  { id: 'ht', label: 'ร้อย×สิบบน (H×T)', short: 'H×T', description: 'ผลคูณหลักร้อยและหลักสิบบน mod 10' },
+  { id: 'tu', label: 'สิบ×หน่วยบน (T×U)', short: 'T×U', description: 'ผลคูณหลักสิบและหลักหน่วยบน mod 10' },
+  { id: 'hu', label: 'ร้อย×หน่วยบน (H×U)', short: 'H×U', description: 'ผลคูณหลักร้อยและหลักหน่วยบน mod 10' },
+  { id: 'btu', label: 'สิบ×หน่วยล่าง (BT×BU)', short: 'BT×BU', description: 'ผลคูณสิบล่างและหน่วยล่าง mod 10' },
+  { id: 'hbt', label: 'ร้อยบน×สิบล่าง (H×BT)', short: 'H×BT', description: 'ผลคูณร้อยบนและสิบล่าง mod 10' },
+  { id: 'hbu', label: 'ร้อยบน×หน่วยล่าง (H×BU)', short: 'H×BU', description: 'ผลคูณร้อยบนและหน่วยล่าง mod 10' },
+  { id: 'tbt', label: 'สิบบน×สิบล่าง (T×BT)', short: 'T×BT', description: 'ผลคูณสิบบนและสิบล่าง mod 10' },
+  { id: 'tbu', label: 'สิบบน×หน่วยล่าง (T×BU)', short: 'T×BU', description: 'ผลคูณสิบบนและหน่วยล่าง mod 10' },
+  { id: 'ubt', label: 'หน่วยบน×สิบล่าง (U×BT)', short: 'U×BT', description: 'ผลคูณหน่วยบนและสิบล่าง mod 10' },
+  { id: 'ubu', label: 'หน่วยบน×หน่วยล่าง (U×BU)', short: 'U×BU', description: 'ผลคูณหน่วยบนและหน่วยล่าง mod 10' },
   { id: 'none', label: '(ไม่มี / 0)', short: '0', description: 'ค่าคงที่ศูนย์ (ไม่ใช้ตัวแปร)' }
 ];
 

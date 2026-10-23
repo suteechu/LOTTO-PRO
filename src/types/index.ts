@@ -1,4 +1,8 @@
-export type VariableId = 'h' | 't' | 'u' | 'bt' | 'bu' | 'none';
+export type VariableId =
+  | 'h' | 't' | 'u' | 'bt' | 'bu'
+  | 'ht' | 'tu' | 'hu' | 'btu'
+  | 'hbt' | 'hbu' | 'tbt' | 'tbu' | 'ubt' | 'ubu'
+  | 'none';
 
 export interface VariableDef {
   id: VariableId;
@@ -10,6 +14,7 @@ export interface VariableDef {
 export interface DigitFormula {
   v1: VariableId;
   v2: VariableId;
+  v3?: VariableId;
   c: number;
 }
 
@@ -61,6 +66,9 @@ export interface StrategyMetrics {
   hit1PlusTop: number;
   hit1PlusTopRate: number;
   totalProfit: number;
+  grossPayout: number;
+  totalCost: number;
+  riskRewardRatio: number;
   roi: number;
   winRate: number;
 }

@@ -25,7 +25,7 @@ export const FormulaEditor: React.FC<FormulaEditorProps> = ({
 
   const handleUpdate = (
     key: keyof FormulaState,
-    field: 'v1' | 'v2' | 'c',
+    field: 'v1' | 'v2' | 'v3' | 'c',
     val: VariableId | number
   ) => {
     playTerminalBeep(850, 0.04);
@@ -42,7 +42,7 @@ export const FormulaEditor: React.FC<FormulaEditorProps> = ({
     <div className="bg-[#14181f] border border-gray-800 rounded-xl overflow-hidden shadow-lg animate-in fade-in slide-in-from-top-2">
       <div className="px-3.5 py-2.5 bg-[#1a2028] border-b border-gray-800 flex justify-between items-center">
         <div className="flex items-center gap-2">
-          <span className="text-yellow-400 font-bold text-xs uppercase tracking-wider">Strategy Parameters (สูตรคำนวณ)</span>
+          <span className="text-yellow-400 font-bold text-xs uppercase tracking-wider">Quantum 3-Factor Formula (สูตรคำนวณ 3 ตัวแปร)</span>
         </div>
         <button
           onClick={() => {
@@ -59,27 +59,29 @@ export const FormulaEditor: React.FC<FormulaEditorProps> = ({
       <div className="p-3 space-y-2.5">
         <div className="text-[10px] text-gray-400 flex items-center gap-1">
           <HelpCircle size={12} className="text-yellow-400 shrink-0" />
-          <span>สูตรคำนวณโมดูลาร์: <code>(ตัวแปร 1 + ตัวแปร 2 + ค่าคงที่ C) mod 10</code></span>
+          <span>สมการควอนตัม: <code>(V1 + V2 + V3 + C) mod 10</code> (รองรับตัวแปรคูณไขว้)</span>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-2.5">
-          {digitConfigs.map(({ key, label, badge, color }) => {
+        <div className="grid grid-cols-1 gap-2.5">
+          {digitConfigs.map(({ key, label, color }) => {
             const conf = formula[key];
             const v1Def = VARIABLES.find(v => v.id === conf.v1);
             const v2Def = VARIABLES.find(v => v.id === conf.v2);
+            const v3Id = conf.v3 || 'none';
+            const v3Def = VARIABLES.find(v => v.id === v3Id);
 
             return (
               <div key={key} className="bg-[#0e1217] p-2.5 rounded-lg border border-gray-800/80">
                 <div className="flex justify-between items-center mb-1.5">
                   <span className="text-[10px] font-bold text-gray-300">{label}</span>
                   <span className={`text-[9px] font-mono font-bold ${color} bg-[#1a2028] px-1.5 py-0.5 rounded border border-gray-800`}>
-                    ({v1Def?.short || '0'} + {v2Def?.short || '0'} + {conf.c}) % 10
+                    ({v1Def?.short || '0'} + {v2Def?.short || '0'} + {v3Def?.short || '0'} + {conf.c}) % 10
                   </span>
                 </div>
 
-                <div className="flex gap-1.5 items-center">
+                <div className="flex gap-1 items-center">
                   <select
-                    className="flex-1 bg-[#161a22] border border-gray-700 rounded px-2 py-1 text-xs text-white focus:border-yellow-500 outline-none"
+                    className="flex-1 min-w-0 bg-[#161a22] border border-gray-700 rounded px-1.5 py-1 text-[11px] text-white focus:border-yellow-500 outline-none truncate"
                     value={conf.v1}
                     onChange={(e) => handleUpdate(key, 'v1', e.target.value as VariableId)}
                   >
@@ -88,10 +90,10 @@ export const FormulaEditor: React.FC<FormulaEditorProps> = ({
                     ))}
                   </select>
 
-                  <span className="text-gray-500 text-xs font-bold">+</span>
+                  <span className="text-gray-500 text-[10px] font-bold">+</span>
 
                   <select
-                    className="flex-1 bg-[#161a22] border border-gray-700 rounded px-2 py-1 text-xs text-white focus:border-yellow-500 outline-none"
+                    className="flex-1 min-w-0 bg-[#161a22] border border-gray-700 rounded px-1.5 py-1 text-[11px] text-white focus:border-yellow-500 outline-none truncate"
                     value={conf.v2}
                     onChange={(e) => handleUpdate(key, 'v2', e.target.value as VariableId)}
                   >
@@ -100,13 +102,25 @@ export const FormulaEditor: React.FC<FormulaEditorProps> = ({
                     ))}
                   </select>
 
-                  <span className="text-gray-500 text-xs font-bold">+</span>
+                  <span className="text-gray-500 text-[10px] font-bold">+</span>
+
+                  <select
+                    className="flex-1 min-w-0 bg-[#161a22] border border-gray-700 rounded px-1.5 py-1 text-[11px] text-white focus:border-yellow-500 outline-none truncate"
+                    value={v3Id}
+                    onChange={(e) => handleUpdate(key, 'v3', e.target.value as VariableId)}
+                  >
+                    {VARIABLES.map(v => (
+                      <option key={v.id} value={v.id}>{v.label}</option>
+                    ))}
+                  </select>
+
+                  <span className="text-gray-500 text-[10px] font-bold">+</span>
 
                   <input
                     type="number"
                     min="0"
                     max="9"
-                    className="w-10 bg-[#161a22] border border-gray-700 rounded py-1 text-xs text-center text-yellow-400 font-mono font-bold focus:border-yellow-500 outline-none"
+                    className="w-9 shrink-0 bg-[#161a22] border border-gray-700 rounded py-1 text-xs text-center text-yellow-400 font-mono font-bold focus:border-yellow-500 outline-none"
                     value={conf.c}
                     onChange={(e) => handleUpdate(key, 'c', (parseInt(e.target.value, 10) || 0) % 10)}
                   />

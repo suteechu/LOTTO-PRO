@@ -90,7 +90,7 @@ export const PredictionHero: React.FC<PredictionHeroProps> = ({
           <span className="text-yellow-400 text-xs font-mono font-bold mt-3 tracking-widest uppercase animate-pulse">
             AI Quant Auto-Tuning Engine...
           </span>
-          <span className="text-[10px] text-gray-400 font-mono mt-1">Brute-forcing 1,800+ digit combinations</span>
+          <span className="text-[10px] text-gray-400 font-mono mt-1">Brute-forcing 8,160+ Quantum 3-Factor combinations</span>
         </div>
       )}
 
@@ -184,21 +184,26 @@ export const PredictionHero: React.FC<PredictionHeroProps> = ({
       </div>
 
       {/* Statistics Performance */}
-      <div className="grid grid-cols-3 gap-2 py-2.5 px-3 bg-[#0d1014] rounded-lg border border-gray-800/80 mb-4 text-center">
+      <div className="grid grid-cols-4 gap-1.5 py-2.5 px-2 bg-[#0d1014] rounded-lg border border-gray-800/80 mb-4 text-center">
         <div>
-          <p className="text-[9px] text-gray-400 font-bold uppercase tracking-wider">3D Win Rate</p>
+          <p className="text-[9px] text-gray-400 font-bold uppercase tracking-wider">Risk:Reward</p>
+          <p className="text-sm font-mono font-black text-amber-400">1:{metrics.riskRewardRatio.toFixed(1)}</p>
+          <span className="text-[9px] text-emerald-400 font-mono">ROI +{metrics.roi.toFixed(0)}%</span>
+        </div>
+        <div className="border-l border-gray-800">
+          <p className="text-[9px] text-gray-400 font-bold uppercase tracking-wider">3D Jackpot</p>
           <p className="text-sm font-mono font-black text-yellow-400">{metrics.exact3Rate.toFixed(1)}%</p>
-          <span className="text-[9px] text-gray-500">{metrics.exact3Hits} จาก {metrics.totalDraws} งวด</span>
+          <span className="text-[9px] text-gray-500">{metrics.exact3Hits}/{metrics.totalDraws} งวด</span>
         </div>
         <div className="border-x border-gray-800">
-          <p className="text-[9px] text-gray-400 font-bold uppercase tracking-wider">Strike 1D+</p>
-          <p className="text-sm font-mono font-black text-emerald-400">{metrics.hit1PlusTopRate.toFixed(1)}%</p>
-          <span className="text-[9px] text-gray-500">{metrics.hit1PlusTop} จาก {metrics.totalDraws} งวด</span>
-        </div>
-        <div>
           <p className="text-[9px] text-gray-400 font-bold uppercase tracking-wider">Overall Win</p>
           <p className="text-sm font-mono font-black text-blue-400">{metrics.winRate.toFixed(1)}%</p>
-          <span className="text-[9px] text-gray-500">ตรง/โต๊ด/2 ตัว</span>
+          <span className="text-[9px] text-gray-500">ตรง/โต๊ด/2ตัว</span>
+        </div>
+        <div>
+          <p className="text-[9px] text-gray-400 font-bold uppercase tracking-wider">Strike 1D+</p>
+          <p className="text-sm font-mono font-black text-emerald-400">{metrics.hit1PlusTopRate.toFixed(1)}%</p>
+          <span className="text-[9px] text-gray-500">{metrics.hit1PlusTop}/{metrics.totalDraws} งวด</span>
         </div>
       </div>
 
