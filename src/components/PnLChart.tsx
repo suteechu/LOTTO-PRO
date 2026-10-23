@@ -1,17 +1,19 @@
 import React from 'react';
 import { BacktestRow } from '../types';
-import { TrendingUp, DollarSign } from 'lucide-react';
+import { TrendingUp } from 'lucide-react';
 
 interface PnLChartProps {
   rows: BacktestRow[];
 }
 
 export const PnLChart: React.FC<PnLChartProps> = ({ rows }) => {
-  if (rows.length < 2) return null;
+  if (rows.length < 1) return null;
 
-  // Chronological order for chart (oldest to newest)
+  // Chronological order for chart (oldest draw on the left -> newest draw on the right)
   const chronological = [...rows].reverse();
-  const pnlPoints = chronological.map(r => r.cumulativePnL);
+
+  // Include initial 0 baseline point before the 1st backtest draw
+  const pnlPoints = [0, ...chronological.map(r => r.cumulativePnL)];
 
   const minPnL = Math.min(0, ...pnlPoints);
   const maxPnL = Math.max(100, ...pnlPoints);
@@ -25,18 +27,20 @@ export const PnLChart: React.FC<PnLChartProps> = ({ rows }) => {
   const innerW = width - paddingX * 2;
   const innerH = height - paddingY * 2;
 
-  // Generate SVG points
-  const points = pnlPoints.map((val, idx) => {
-    const x = paddingX + (idx / (pnlPoints.length - 1)) * innerW;
+  // Generate SVG coordinates for [0, ...chronological]
+  const coords = pnlPoints.map((val, idx) => {
+    const x = paddingX + (idx / Math.max(1, pnlPoints.length - 1)) * innerW;
     const y = paddingY + innerH - ((val - minPnL) / range) * innerH;
-    return `${x.toFixed(1)},${y.toFixed(1)}`;
+    return { x, y, val, row: idx > 0 ? chronological[idx - 1] : null };
   });
 
-  const pathD = `M ${points.join(' L ')}`;
-  const areaD = `M ${paddingX},${height - paddingY} L ${points.join(' L ')} L ${width - paddingX},${height - paddingY} Z`;
+  const pointsStr = coords.map(c => `${c.x.toFixed(1)},${c.y.toFixed(1)}`);
+  const pathD = `M ${pointsStr.join(' L ')}`;
 
   // Zero line y coordinate
   const zeroY = paddingY + innerH - ((0 - minPnL) / range) * innerH;
+  const baseLineY = Math.min(height - paddingY, Math.max(paddingY, zeroY));
+  const areaD = `M ${paddingX},${baseLineY.toFixed(1)} L ${pointsStr.join(' L ')} L ${width - paddingX},${baseLineY.toFixed(1)} Z`;
 
   const lastVal = pnlPoints[pnlPoints.length - 1];
   const isProfitable = lastVal >= 0;
@@ -49,7 +53,7 @@ export const PnLChart: React.FC<PnLChartProps> = ({ rows }) => {
           <span>SIMULATED EQUITY CURVE (กราฟผลตอบแทนสะสม)</span>
         </div>
         <div className="flex items-center gap-2 font-mono text-xs">
-          <span className="text-gray-500">สุทธิ:</span>
+          <span className="text-gray-500">กำไรสะสมสุทธิ:</span>
           <span className={`font-bold ${isProfitable ? 'text-emerald-400' : 'text-rose-400'}`}>
             {isProfitable ? '+' : ''}{lastVal.toLocaleString()} THB
           </span>
@@ -98,12 +102,36 @@ export const PnLChart: React.FC<PnLChartProps> = ({ rows }) => {
             strokeLinejoin="round"
           />
 
+          {/* Highlight dots on winning draws */}
+          {coords.map((pt, idx) => {
+            if (!pt.row) return null;
+            const r = pt.row;
+            const isWin = r.is3Exact || r.is3Tod || r.is2TopExact || r.is2BotExact;
+            if (!isWin) return null;
+
+            return (
+              <circle
+                key={idx}
+                cx={pt.x}
+                cy={pt.y}
+                r={r.is3Exact ? 4 : 3}
+                fill={r.is3Exact ? '#facc15' : '#10b981'}
+                stroke="#0b0e11"
+                strokeWidth="1"
+              >
+                <title>
+                  {`${r.date}: ${r.simulatedPnL >= 0 ? '+' : ''}${r.simulatedPnL.toLocaleString()}฿ (สะสม: ${pt.val >= 0 ? '+' : ''}${pt.val.toLocaleString()}฿)`}
+                </title>
+              </circle>
+            );
+          })}
+
           {/* Current end dot */}
-          {points.length > 0 && (
+          {coords.length > 0 && (
             <circle
-              cx={points[points.length - 1].split(',')[0]}
-              cy={points[points.length - 1].split(',')[1]}
-              r="4"
+              cx={coords[coords.length - 1].x}
+              cy={coords[coords.length - 1].y}
+              r="4.5"
               fill={isProfitable ? '#10b981' : '#f43f5e'}
               className="animate-pulse"
             />
@@ -112,9 +140,9 @@ export const PnLChart: React.FC<PnLChartProps> = ({ rows }) => {
       </div>
 
       <div className="flex justify-between items-center text-[9px] text-gray-500 font-mono px-1 mt-1">
-        <span>เริ่มต้น: {chronological[0]?.date || ''}</span>
-        <span>สูงสุด: +{maxPnL.toLocaleString()} ฿</span>
-        <span>ล่าสุด: {chronological[chronological.length - 1]?.date || ''}</span>
+        <span>เริ่มต้น: {chronological[0]?.date || ''} (0 ฿)</span>
+        <span className="text-emerald-400/90 font-bold">สูงสุด (Peak): +{maxPnL.toLocaleString()} ฿</span>
+        <span>ล่าสุด: {chronological[chronological.length - 1]?.date || ''} ({lastVal >= 0 ? '+' : ''}{lastVal.toLocaleString()} ฿)</span>
       </div>
     </div>
   );

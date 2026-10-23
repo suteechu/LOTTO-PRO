@@ -152,7 +152,6 @@ export function runBacktest(
 
     totalGrossPayout += payout;
     const netPnL = payout - cost;
-    runningPnL += netPnL;
 
     return {
       drawNo: current.drawNo,
@@ -168,9 +167,15 @@ export function runBacktest(
       matchedTopCount,
       matchedBotCount,
       simulatedPnL: netPnL,
-      cumulativePnL: runningPnL
+      cumulativePnL: 0
     };
   });
+
+  // Accumulate cumulativePnL in true chronological order (from oldest draw to newest draw)
+  for (let i = rows.length - 1; i >= 0; i--) {
+    runningPnL += rows[i].simulatedPnL;
+    rows[i].cumulativePnL = runningPnL;
+  }
 
   const total = rows.length;
   const anyWinCount = rows.filter(r => r.is3Exact || r.is3Tod || r.is2TopExact || r.is2BotExact).length;
