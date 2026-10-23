@@ -20,7 +20,9 @@ export const PayoutSettingsModal: React.FC<PayoutSettingsModalProps> = ({
 
   if (!isOpen) return null;
 
-  const totalBet = localCfg.betDirect3D + localCfg.betTod3D + localCfg.betTop2D + localCfg.betBot2D;
+  const betTopRev = localCfg.betTop2DRev ?? 50;
+  const betBotRev = localCfg.betBot2DRev ?? 50;
+  const totalBet = localCfg.betDirect3D + localCfg.betTod3D + localCfg.betTop2D + betTopRev + localCfg.betBot2D + betBotRev;
 
   const handleSave = () => {
     onSavePayoutConfig(localCfg);
@@ -116,9 +118,9 @@ export const PayoutSettingsModal: React.FC<PayoutSettingsModalProps> = ({
               </span>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs font-mono">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs font-mono">
               <div className="bg-[#0e1217] p-2 rounded-lg border border-gray-800">
-                <span className="text-[10px] text-gray-400 block mb-1">แทง 3 ตรง</span>
+                <span className="text-[10px] text-gray-400 block mb-1">3 ตัวตรง</span>
                 <input
                   type="number"
                   min="0"
@@ -129,7 +131,7 @@ export const PayoutSettingsModal: React.FC<PayoutSettingsModalProps> = ({
               </div>
 
               <div className="bg-[#0e1217] p-2 rounded-lg border border-gray-800">
-                <span className="text-[10px] text-gray-400 block mb-1">แทง โต๊ด</span>
+                <span className="text-[10px] text-gray-400 block mb-1">3 ตัวโต๊ด</span>
                 <input
                   type="number"
                   min="0"
@@ -140,7 +142,7 @@ export const PayoutSettingsModal: React.FC<PayoutSettingsModalProps> = ({
               </div>
 
               <div className="bg-[#0e1217] p-2 rounded-lg border border-gray-800">
-                <span className="text-[10px] text-gray-400 block mb-1">แทง 2 บน</span>
+                <span className="text-[10px] text-gray-400 block mb-1">2 บน (ตรง)</span>
                 <input
                   type="number"
                   min="0"
@@ -151,13 +153,35 @@ export const PayoutSettingsModal: React.FC<PayoutSettingsModalProps> = ({
               </div>
 
               <div className="bg-[#0e1217] p-2 rounded-lg border border-gray-800">
-                <span className="text-[10px] text-gray-400 block mb-1">แทง 2 ล่าง</span>
+                <span className="text-[10px] text-gray-400 block mb-1">2 บน (กลับ)</span>
+                <input
+                  type="number"
+                  min="0"
+                  className="w-full bg-[#161a22] border border-gray-700 rounded px-1.5 py-1 text-center font-bold text-white outline-none focus:border-yellow-400"
+                  value={betTopRev}
+                  onChange={(e) => setLocalCfg({ ...localCfg, betTop2DRev: parseInt(e.target.value) || 0 })}
+                />
+              </div>
+
+              <div className="bg-[#0e1217] p-2 rounded-lg border border-gray-800">
+                <span className="text-[10px] text-gray-400 block mb-1">2 ล่าง (ตรง)</span>
                 <input
                   type="number"
                   min="0"
                   className="w-full bg-[#161a22] border border-gray-700 rounded px-1.5 py-1 text-center font-bold text-white outline-none focus:border-yellow-400"
                   value={localCfg.betBot2D}
                   onChange={(e) => setLocalCfg({ ...localCfg, betBot2D: parseInt(e.target.value) || 0 })}
+                />
+              </div>
+
+              <div className="bg-[#0e1217] p-2 rounded-lg border border-gray-800">
+                <span className="text-[10px] text-gray-400 block mb-1">2 ล่าง (กลับ)</span>
+                <input
+                  type="number"
+                  min="0"
+                  className="w-full bg-[#161a22] border border-gray-700 rounded px-1.5 py-1 text-center font-bold text-white outline-none focus:border-yellow-400"
+                  value={betBotRev}
+                  onChange={(e) => setLocalCfg({ ...localCfg, betBot2DRev: parseInt(e.target.value) || 0 })}
                 />
               </div>
             </div>
@@ -171,7 +195,7 @@ export const PayoutSettingsModal: React.FC<PayoutSettingsModalProps> = ({
             className="flex items-center gap-1 text-xs text-gray-400 hover:text-white px-3 py-1.5 rounded bg-gray-800/80 hover:bg-gray-800 transition-colors"
           >
             <RotateCcw size={12} />
-            <span>รีเซ็ตมาตรฐาน (งวดละ 200฿)</span>
+            <span>รีเซ็ตมาตรฐาน (100×100 / 50×50 = 400฿)</span>
           </button>
 
           <button

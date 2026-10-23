@@ -67,45 +67,50 @@ export const TicketModal: React.FC<TicketModalProps> = ({
     `${d[2]}${d[1]}${d[0]}`,
   ]));
 
+  const betTopRev = payoutConfig.betTop2DRev ?? 50;
+  const betBotRev = payoutConfig.betBot2DRev ?? 50;
+  const totalBillCost = payoutConfig.betDirect3D + payoutConfig.betTod3D + payoutConfig.betTop2D + betTopRev + payoutConfig.betBot2D + betBotRev;
+
   const direct3DPayout = payoutConfig.betDirect3D * payoutConfig.direct3D;
   const tod3DPayout = payoutConfig.betTod3D * payoutConfig.tod3D;
   const top2DPayout = payoutConfig.betTop2D * payoutConfig.direct2D;
+  const top2DRevPayout = betTopRev * payoutConfig.direct2D;
   const bot2DPayout = payoutConfig.betBot2D * payoutConfig.direct2D;
+  const bot2DRevPayout = betBotRev * payoutConfig.direct2D;
+
+  const top2Rev = `${d[2]}${d[1]}`;
+  const bot2Rev = `${bd[1]}${bd[0]}`;
 
   const shareText = isHistorical && historicalRow ?
 `🎫 บันทึกใบแนวทางย้อนหลัง LOTTO-PRO TERMINAL
 ━━━━━━━━━━━━━━━━━━
 📅 งวดประจำวันที่: ${historicalRow.date} (#${historicalRow.drawNo})
-💰 อัตราจ่าย: 3ตรง บาทละ ${payoutConfig.direct3D} | โต๊ด บาทละ ${payoutConfig.tod3D} | 2ตัว บาทละ ${payoutConfig.direct2D}
+💰 อัตราจ่าย: 3ตรง ${payoutConfig.direct3D} | โต๊ด ${payoutConfig.tod3D} | 2ตัว ${payoutConfig.direct2D}
 
-🎯 ผลคำนวณทำนาย:
-🏆 3 ตัวบนตรง: ${historicalRow.predTop3}
-🔄 ชุดโต๊ด: ${todPermutations.join(', ')}
-⭐ 2 ตัวบน: ${top2} | 🌟 2 ตัวล่าง: ${bot2}
-⚡ เลขวิ่ง: บน (${d[1]}, ${d[2]}) | ล่าง (${bd[0]}, ${bd[1]})
+📝 โพยจำลองเดิมพัน (รวมทุน ${totalBillCost}฿):
+• 3 ตัว: ${historicalRow.predTop3} = ${payoutConfig.betDirect3D}*${payoutConfig.betTod3D} (ตรง ${payoutConfig.betDirect3D} โต๊ด ${payoutConfig.betTod3D})
+• 2 บน: ${top2} = ${payoutConfig.betTop2D}*${betTopRev} (${top2}=${payoutConfig.betTop2D} | ${top2Rev}=${betTopRev})
+• 2 ล่าง: ${bot2} = ${payoutConfig.betBot2D}*${betBotRev} (${bot2}=${payoutConfig.betBot2D} | ${bot2Rev}=${betBotRev})
 
 📌 ผลการออกรางวัลจริง:
 • รางวัลที่ 1 (3 ตัวบน): ${historicalRow.actualTop3}
 • เลขท้าย 2 ตัวล่าง: ${historicalRow.actualBot2}
 • กำไรสุทธิของงวดนี้: ${historicalRow.simulatedPnL > 0 ? `+${historicalRow.simulatedPnL.toLocaleString()}` : `${historicalRow.simulatedPnL}`} บาท
-• สถานะ: ${historicalRow.is3Exact ? `🎯 ถูก 3 ตัวตรง JACKPOT! (+${direct3DPayout.toLocaleString()} บ.)` : historicalRow.is3Tod ? `🔄 ถูก 3 ตัวโต๊ด! (+${tod3DPayout.toLocaleString()} บ.)` : historicalRow.is2TopExact ? `⭐ ถูก 2 ตัวบน! (+${top2DPayout.toLocaleString()} บ.)` : historicalRow.is2BotExact ? `⭐ ถูก 2 ตัวล่าง! (+${bot2DPayout.toLocaleString()} บ.)` : historicalRow.matchedTopCount > 0 ? `✨ เข้าเลขวิ่ง ${historicalRow.matchedTopCount} ตัว` : 'หลุดเป้า'}
+• สถานะ: ${historicalRow.is3Exact ? `🎯 ถูก 3 ตัวตรง JACKPOT! (+${direct3DPayout.toLocaleString()} บ.)` : historicalRow.is3Tod ? `🔄 ถูก 3 ตัวโต๊ด! (+${tod3DPayout.toLocaleString()} บ.)` : historicalRow.is2TopExact ? `⭐ ถูก 2 ตัวบนตรง! (+${top2DPayout.toLocaleString()} บ.)` : historicalRow.is2TopRev ? `🔁 ถูก 2 ตัวบนกลับ! (+${top2DRevPayout.toLocaleString()} บ.)` : historicalRow.is2BotExact ? `⭐ ถูก 2 ตัวล่างตรง! (+${bot2DPayout.toLocaleString()} บ.)` : historicalRow.is2BotRev ? `🔁 ถูก 2 ตัวล่างกลับ! (+${bot2DRevPayout.toLocaleString()} บ.)` : historicalRow.matchedTopCount > 0 ? `✨ เข้าเลขวิ่ง ${historicalRow.matchedTopCount} ตัว` : 'หลุดเป้า'}
 ━━━━━━━━━━━━━━━━━━
 🤖 บันทึกจาก LOTTO-PRO Quantitative Engine`
 :
-`🎯 แนวทางสลากกินแบ่งรัฐบาล LOTTO-PRO TERMINAL
+`🎯 โพยแนวทาง LOTTO-PRO TERMINAL
 ━━━━━━━━━━━━━━━━━━
-✨ ประจำงวดถัดไป (${dateTitle})
-💰 อัตราจ่าย: 3ตรง บาทละ ${payoutConfig.direct3D} | โต๊ด บาทละ ${payoutConfig.tod3D} | 2ตัว บาทละ ${payoutConfig.direct2D}
+✨ ประจำ${dateTitle}
+💰 อัตราจ่าย: 3ตรง ${payoutConfig.direct3D} | โต๊ด ${payoutConfig.tod3D} | 2ตัว ${payoutConfig.direct2D}
 
-🏆 3 ตัวบนตรง: ${top3}
-🔄 ชุดโต๊ด: ${todPermutations.join(', ')}
+📝 รายการโพย (รวมทุน ${totalBillCost}฿):
+🏆 3 ตัว: ${top3} = ${payoutConfig.betDirect3D}*${payoutConfig.betTod3D} (ตรง ${payoutConfig.betDirect3D} โต๊ด ${payoutConfig.betTod3D})
+⭐ 2 บน: ${top2} = ${payoutConfig.betTop2D}*${betTopRev} (${top2}=${payoutConfig.betTop2D} | ${top2Rev}=${betTopRev})
+🌟 2 ล่าง: ${bot2} = ${payoutConfig.betBot2D}*${betBotRev} (${bot2}=${payoutConfig.betBot2D} | ${bot2Rev}=${betBotRev})
 
-⭐ 2 ตัวบน: ${top2}
-🌟 2 ตัวล่าง: ${bot2}
-🔁 กลับล่าง: ${bd.slice().reverse().join('')}
-
-⚡ เลขวิ่งบน: ${d[1]}, ${d[2]}
-⚡ เลขวิ่งล่าง: ${bd[0]}, ${bd[1]}
+⚡ เลขวิ่งบน: ${d[1]}, ${d[2]} | วิ่งล่าง: ${bd[0]}, ${bd[1]}
 ━━━━━━━━━━━━━━━━━━
 🤖 วิเคราะห์เชิงสถิติด้วย LOTTO-PRO Quant AI Engine`;
 
@@ -222,9 +227,17 @@ export const TicketModal: React.FC<TicketModalProps> = ({
                   <span className="text-xs font-black text-cyan-400 bg-cyan-500/20 px-3 py-1 rounded-full border border-cyan-500/30 flex items-center gap-1">
                     ⭐ ถูก 2 ตัวบนตรง (+{top2DPayout.toLocaleString()} บาท [บาทละ {payoutConfig.direct2D}])
                   </span>
+                ) : historicalRow.is2TopRev ? (
+                  <span className="text-xs font-black text-sky-300 bg-sky-500/20 px-3 py-1 rounded-full border border-sky-500/30 flex items-center gap-1">
+                    🔁 ถูก 2 ตัวบนกลับ (+{top2DRevPayout.toLocaleString()} บาท [บาทละ {payoutConfig.direct2D}])
+                  </span>
                 ) : historicalRow.is2BotExact ? (
                   <span className="text-xs font-black text-emerald-400 bg-emerald-500/20 px-3 py-1 rounded-full border border-emerald-500/30 flex items-center gap-1">
                     ⭐ ถูก 2 ตัวล่างตรง (+{bot2DPayout.toLocaleString()} บาท [บาทละ {payoutConfig.direct2D}])
+                  </span>
+                ) : historicalRow.is2BotRev ? (
+                  <span className="text-xs font-black text-teal-300 bg-teal-500/20 px-3 py-1 rounded-full border border-teal-500/30 flex items-center gap-1">
+                    🔁 ถูก 2 ตัวล่างกลับ (+{bot2DRevPayout.toLocaleString()} บาท [บาทละ {payoutConfig.direct2D}])
                   </span>
                 ) : historicalRow.matchedTopCount > 0 ? (
                   <span className="text-xs font-bold text-blue-400 bg-blue-500/10 px-3 py-1 rounded-full border border-blue-500/20">
@@ -242,8 +255,8 @@ export const TicketModal: React.FC<TicketModalProps> = ({
           {/* Main 3D Box */}
           <div className="text-center bg-[#0d1014] border border-yellow-500/30 rounded-xl p-3.5 shadow-inner">
             <div className="flex justify-between items-center text-xs font-bold text-gray-400 uppercase tracking-widest px-2">
-              <span>3 ตัวบน ตรง-เต็ง</span>
-              <span className="text-[10px] text-yellow-400 font-mono">บาทละ {payoutConfig.direct3D}</span>
+              <span>3 ตัวบน ({payoutConfig.betDirect3D}×{payoutConfig.betTod3D})</span>
+              <span className="text-[10px] text-yellow-400 font-mono">ตรง {payoutConfig.betDirect3D}฿ • โต๊ด {payoutConfig.betTod3D}฿</span>
             </div>
             <div className="text-5xl font-mono font-black text-yellow-400 tracking-wider my-2 drop-shadow-[0_0_15px_rgba(240,185,11,0.35)]">
               {top3}
@@ -258,28 +271,28 @@ export const TicketModal: React.FC<TicketModalProps> = ({
             </div>
           </div>
 
-          {/* 2D Pairs Box */}
+          {/* 2D Pairs Box (50x50 format) */}
           <div className="grid grid-cols-2 gap-3">
             <div className="bg-[#0d1014] border border-gray-800 rounded-xl p-2.5 text-center">
               <div className="flex justify-between items-center px-1">
-                <span className="text-[11px] font-bold text-gray-400 uppercase">2 ตัวบน</span>
+                <span className="text-[11px] font-bold text-gray-400 uppercase">2 บน ({payoutConfig.betTop2D}×{betTopRev})</span>
                 <span className="text-[9px] text-cyan-400 font-mono">บาทละ {payoutConfig.direct2D}</span>
               </div>
               <div className="text-2xl font-mono font-black text-cyan-400 my-0.5">
-                {top2}
+                {top2} <span className="text-sm text-gray-500 font-normal">/</span> <span className="text-lg text-sky-300">{top2Rev}</span>
               </div>
-              <span className="text-[10px] text-gray-500 font-mono">กลับ: {top2.split('').reverse().join('')}</span>
+              <span className="text-[10px] text-gray-400 font-mono">{top2}={payoutConfig.betTop2D}฿ | {top2Rev}={betTopRev}฿</span>
             </div>
 
             <div className="bg-[#0d1014] border border-gray-800 rounded-xl p-2.5 text-center">
               <div className="flex justify-between items-center px-1">
-                <span className="text-[11px] font-bold text-gray-400 uppercase">2 ตัวล่าง</span>
+                <span className="text-[11px] font-bold text-gray-400 uppercase">2 ล่าง ({payoutConfig.betBot2D}×{betBotRev})</span>
                 <span className="text-[9px] text-emerald-400 font-mono">บาทละ {payoutConfig.direct2D}</span>
               </div>
               <div className="text-2xl font-mono font-black text-emerald-400 my-0.5">
-                {bot2}
+                {bot2} <span className="text-sm text-gray-500 font-normal">/</span> <span className="text-lg text-teal-300">{bot2Rev}</span>
               </div>
-              <span className="text-[10px] text-gray-500 font-mono">กลับ: {bd.slice().reverse().join('')}</span>
+              <span className="text-[10px] text-gray-400 font-mono">{bot2}={payoutConfig.betBot2D}฿ | {bot2Rev}={betBotRev}฿</span>
             </div>
           </div>
 

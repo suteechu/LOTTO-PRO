@@ -3,16 +3,16 @@ import { PresetFormula, FormulaState, DigitFormula } from '../types';
 export const PRESET_FORMULAS: PresetFormula[] = [
   {
     id: 'god-tier-quantum-alpha',
-    name: '👑 God-Tier Quantum Alpha (RR 1:18.9 | 3ตรง 6 งวด)',
-    description: 'สูตรควอนตัม 3 ตัวแปรคูณไขว้ (Cross-Product) สถิติจริง 38 งวด เข้า 3 ตัวตรง 6 งวด, 2 ตัวบน 6 งวด, 2 ตัวล่าง 7 งวด กำไรสุทธิ +135,650฿ (Win Rate 34.2%)',
+    name: '👑 God-Tier Quantum Alpha (RR 1:23.7 | Win 44.7%)',
+    description: 'สูตรควอนตัม 3 ตัวแปรคูณไขว้ สำหรับแผน 100×100 / 50×50 สถิติจริงเข้า 3ตรง 6 งวด, 2บน(ไป-กลับ) 8 งวด, 2ล่าง(ไป-กลับ) 9 งวด กำไรสุทธิ +344,300฿',
     targetMode: 'both',
-    winRateTag: 'RR 1:18.9 | ROI +1,785%',
+    winRateTag: 'RR 1:23.7 | ROI +2,265%',
     formula: {
       digit1: { v1: 'hu', v2: 'btu', v3: 'tbt', c: 2 },
       digit2: { v1: 'ht', v2: 'tbu', v3: 'ubu', c: 0 },
       digit3: { v1: 't', v2: 'u', v3: 'bt', c: 7 },
-      bot1:   { v1: 'btu', v2: 'tbu', v3: 'tbu', c: 6 },
-      bot2:   { v1: 'h', v2: 'bu', v3: 'bu', c: 5 }
+      bot1:   { v1: 'ht', v2: 'hu', v3: 'hbt', c: 7 },
+      bot2:   { v1: 'bt', v2: 'bu', v3: 'hbt', c: 4 }
     }
   },
   {

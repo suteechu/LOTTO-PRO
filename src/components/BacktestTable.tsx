@@ -30,9 +30,9 @@ export const BacktestTable: React.FC<BacktestTableProps> = ({ rows, onSelectRowT
     // Filter type match
     if (filter === 'exact3') return row.is3Exact;
     if (filter === 'tod3') return row.is3Tod;
-    if (filter === 'hit2') return row.is2TopExact || row.is2BotExact;
+    if (filter === 'hit2') return row.is2TopExact || row.is2TopRev || row.is2BotExact || row.is2BotRev;
     if (filter === 'hit1') return row.matchedTopCount >= 1 || row.matchedBotCount >= 1;
-    if (filter === 'miss') return !row.is3Exact && !row.is3Tod && !row.is2TopExact && !row.is2BotExact && row.matchedTopCount === 0;
+    if (filter === 'miss') return !row.is3Exact && !row.is3Tod && !row.is2TopExact && !row.is2TopRev && !row.is2BotExact && !row.is2BotRev && row.matchedTopCount === 0;
 
     return true;
   });
@@ -214,22 +214,32 @@ export const BacktestTable: React.FC<BacktestTableProps> = ({ rows, onSelectRowT
                           ⭐ 2 ตัวบนตรง
                         </span>
                       )}
+                      {item.is2TopRev && (
+                        <span className="text-[10px] font-black text-sky-300 bg-sky-500/15 px-2 py-0.5 rounded-full border border-sky-500/30">
+                          🔁 2 บนกลับ
+                        </span>
+                      )}
                       {item.is2BotExact && (
                         <span className="text-[10px] font-black text-emerald-400 bg-emerald-500/15 px-2 py-0.5 rounded-full border border-emerald-500/30">
                           ⭐ 2 ตัวล่างตรง
                         </span>
                       )}
-                      {!item.is3Exact && !item.is3Tod && !item.is2TopExact && !item.is2BotExact && item.matchedTopCount > 0 && (
+                      {item.is2BotRev && (
+                        <span className="text-[10px] font-black text-teal-300 bg-teal-500/15 px-2 py-0.5 rounded-full border border-teal-500/30">
+                          🔁 2 ล่างกลับ
+                        </span>
+                      )}
+                      {!item.is3Exact && !item.is3Tod && !item.is2TopExact && !item.is2TopRev && !item.is2BotExact && !item.is2BotRev && item.matchedTopCount > 0 && (
                         <span className="text-[10px] font-bold text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded border border-blue-500/20">
                           เข้า {item.matchedTopCount} ตัวบน
                         </span>
                       )}
-                      {!item.is3Exact && !item.is3Tod && !item.is2TopExact && !item.is2BotExact && item.matchedBotCount > 0 && (
+                      {!item.is3Exact && !item.is3Tod && !item.is2TopExact && !item.is2TopRev && !item.is2BotExact && !item.is2BotRev && item.matchedBotCount > 0 && (
                         <span className="text-[10px] font-bold text-teal-400 bg-teal-500/10 px-2 py-0.5 rounded border border-teal-500/20">
                           เข้า {item.matchedBotCount} ตัวล่าง
                         </span>
                       )}
-                      {!item.is3Exact && !item.is3Tod && !item.is2TopExact && !item.is2BotExact && item.matchedTopCount === 0 && item.matchedBotCount === 0 && (
+                      {!item.is3Exact && !item.is3Tod && !item.is2TopExact && !item.is2TopRev && !item.is2BotExact && !item.is2BotRev && item.matchedTopCount === 0 && item.matchedBotCount === 0 && (
                         <span className="text-gray-500 text-[10px] font-medium bg-gray-900/60 px-2 py-0.5 rounded border border-gray-800">
                           หลุดเป้า
                         </span>

@@ -48,7 +48,9 @@ export interface BacktestRow {
   is3Exact: boolean;      // 3 ตัวตรง
   is3Tod: boolean;        // 3 ตัวโต๊ด
   is2TopExact: boolean;   // 2 ตัวบนตรง
+  is2TopRev: boolean;     // 2 ตัวบนกลับ
   is2BotExact: boolean;   // 2 ตัวล่างตรง
+  is2BotRev: boolean;     // 2 ตัวล่างกลับ
   matchedTopCount: number;
   matchedBotCount: number;
   simulatedPnL: number;
@@ -62,7 +64,9 @@ export interface StrategyMetrics {
   tod3Hits: number;
   tod3Rate: number;
   exact2TopHits: number;
+  rev2TopHits: number;
   exact2BotHits: number;
+  rev2BotHits: number;
   hit1PlusTop: number;
   hit1PlusTopRate: number;
   totalProfit: number;
@@ -90,21 +94,25 @@ export interface PresetFormula {
 }
 
 export interface PayoutConfig {
-  direct3D: number; // 3 ตรง บาทละ 500
-  tod3D: number;    // 3 โต๊ด บาทละ 100
-  direct2D: number; // 2 ตัว บาทละ 70
-  betDirect3D: number; // แทง 3 ตรง (ค่าเริ่มต้น 25 บาท)
-  betTod3D: number;    // แทง โต๊ด (ค่าเริ่มต้น 25 บาท)
-  betTop2D: number;    // แทง 2 บน (ค่าเริ่มต้น 75 บาท)
-  betBot2D: number;    // แทง 2 ล่าง (ค่าเริ่มต้น 75 บาท)
+  direct3D: number;     // 3 ตรง บาทละ 500
+  tod3D: number;        // 3 โต๊ด บาทละ 100
+  direct2D: number;     // 2 ตัว บาทละ 70
+  betDirect3D: number;  // แทง 3 ตรง (ค่าเริ่มต้น 100 บาท)
+  betTod3D: number;     // แทง 3 โต๊ด (ค่าเริ่มต้น 100 บาท)
+  betTop2D: number;     // แทง 2 บนตรง (ค่าเริ่มต้น 50 บาท)
+  betTop2DRev: number;  // แทง 2 บนกลับ (ค่าเริ่มต้น 50 บาท)
+  betBot2D: number;     // แทง 2 ล่างตรง (ค่าเริ่มต้น 50 บาท)
+  betBot2DRev: number;  // แทง 2 ล่างกลับ (ค่าเริ่มต้น 50 บาท)
 }
 
 export const DEFAULT_PAYOUT_CONFIG: PayoutConfig = {
-  direct3D: 500, // 3 ตรง บาทละ 500
-  tod3D: 100,    // โต๊ด บาทละ 100
-  direct2D: 70,  // 2 ตัว บาทละ 70
-  betDirect3D: 25, // แทง 3 ตรง: 25 บาท
-  betTod3D: 25,    // แทง โต๊ด: 25 บาท
-  betTop2D: 75,    // แทง 2 บน: 75 บาท
-  betBot2D: 75     // แทง 2 ล่าง: 75 บาท
-}; // รวมงวดละ 200 บาท
+  direct3D: 500,    // 3 ตรง บาทละ 500
+  tod3D: 100,       // โต๊ด บาทละ 100
+  direct2D: 70,     // 2 ตัว บาทละ 70
+  betDirect3D: 100, // 3 ตัวตรง: 100 บาท (100×100)
+  betTod3D: 100,    // 3 ตัวโต๊ด: 100 บาท (100×100)
+  betTop2D: 50,     // 2 บนตรง: 50 บาท (50×50)
+  betTop2DRev: 50,  // 2 บนกลับ: 50 บาท (50×50)
+  betBot2D: 50,     // 2 ล่างตรง: 50 บาท (50×50)
+  betBot2DRev: 50   // 2 ล่างกลับ: 50 บาท (50×50)
+}; // รวมงวดละ 400 บาท (3ตัว 100*100 | 2บน 50*50 | 2ล่าง 50*50)

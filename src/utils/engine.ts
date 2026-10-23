@@ -5,8 +5,8 @@ export const DEFAULT_FORMULA: FormulaState = {
   digit1: { v1: 'hu', v2: 'btu', v3: 'tbt', c: 2 },
   digit2: { v1: 'ht', v2: 'tbu', v3: 'ubu', c: 0 },
   digit3: { v1: 't', v2: 'u', v3: 'bt', c: 7 },
-  bot1: { v1: 'btu', v2: 'tbu', v3: 'tbu', c: 6 },
-  bot2: { v1: 'h', v2: 'bu', v3: 'bu', c: 5 }
+  bot1: { v1: 'ht', v2: 'hu', v3: 'hbt', c: 7 },
+  bot2: { v1: 'bt', v2: 'bu', v3: 'hbt', c: 4 }
 };
 
 export function getVariableValues(top3: string, bot2: string): Record<VariableId, number> {
@@ -83,7 +83,9 @@ export function runBacktest(
         tod3Hits: 0,
         tod3Rate: 0,
         exact2TopHits: 0,
+        rev2TopHits: 0,
         exact2BotHits: 0,
+        rev2BotHits: 0,
         hit1PlusTop: 0,
         hit1PlusTopRate: 0,
         totalProfit: 0,
@@ -99,7 +101,9 @@ export function runBacktest(
   let exact3Hits = 0;
   let tod3Hits = 0;
   let exact2TopHits = 0;
+  let rev2TopHits = 0;
   let exact2BotHits = 0;
+  let rev2BotHits = 0;
   let hit1PlusTop = 0;
   let runningPnL = 0;
   let totalGrossPayout = 0;
@@ -112,19 +116,25 @@ export function runBacktest(
     const p2 = calculateDigit(formula.digit2, prev.top3, prev.bot2);
     const p3 = calculateDigit(formula.digit3, prev.top3, prev.bot2);
     const predTop3 = `${p1}${p2}${p3}`;
+    const predTop2 = `${p2}${p3}`;
+    const predTop2Rev = `${p3}${p2}`;
 
     const pb1 = calculateDigit(formula.bot1, prev.top3, prev.bot2);
     const pb2 = calculateDigit(formula.bot2, prev.top3, prev.bot2);
     const predBot2 = `${pb1}${pb2}`;
+    const predBot2Rev = `${pb2}${pb1}`;
 
     // Actual values
     const actTop3 = current.top3;
+    const actTop2 = actTop3.slice(1);
     const actBot2 = current.bot2;
 
     const is3Exact = predTop3 === actTop3;
     const is3Tod = !is3Exact && predTop3.split('').sort().join('') === actTop3.split('').sort().join('');
-    const is2TopExact = predTop3.slice(1) === actTop3.slice(1);
+    const is2TopExact = predTop2 === actTop2;
+    const is2TopRev = !is2TopExact && predTop2Rev === actTop2;
     const is2BotExact = predBot2 === actBot2;
+    const is2BotRev = !is2BotExact && predBot2Rev === actBot2;
 
     let matchedTopCount = 0;
     if (p1 === parseInt(actTop3[0], 10)) matchedTopCount++;
@@ -138,17 +148,24 @@ export function runBacktest(
     if (is3Exact) exact3Hits++;
     if (is3Tod) tod3Hits++;
     if (is2TopExact) exact2TopHits++;
+    if (is2TopRev) rev2TopHits++;
     if (is2BotExact) exact2BotHits++;
+    if (is2BotRev) rev2BotHits++;
     if (matchedTopCount >= 1) hit1PlusTop++;
 
-    // Simulated P&L per draw based on User's Payout Rates:
-    // 3 ตรง: บาทละ 500, โต๊ด: บาทละ 100, 2 ตัว: บาทละ 70
-    const cost = (payoutConfig.betDirect3D + payoutConfig.betTod3D + payoutConfig.betTop2D + payoutConfig.betBot2D) || 100;
+    // Simulated P&L per draw based on User's Underground Betting Style:
+    // 3ตัว = 100*100 (ตรง 100 / โต๊ด 100) | 2บน = 50*50 (ตรง 50 / กลับ 50) | 2ล่าง = 50*50 (ตรง 50 / กลับ 50)
+    const betTopRev = payoutConfig.betTop2DRev ?? 50;
+    const betBotRev = payoutConfig.betBot2DRev ?? 50;
+    const cost = (payoutConfig.betDirect3D + payoutConfig.betTod3D + payoutConfig.betTop2D + betTopRev + payoutConfig.betBot2D + betBotRev) || 400;
+
     let payout = 0;
-    if (is3Exact) payout += payoutConfig.betDirect3D * payoutConfig.direct3D;     // 3ตรง (บาทละ 500)
+    if (is3Exact) payout += payoutConfig.betDirect3D * payoutConfig.direct3D;   // 3ตรง (บาทละ 500)
     if (is3Tod) payout += payoutConfig.betTod3D * payoutConfig.tod3D;           // โต๊ด (บาทละ 100)
-    if (is2TopExact) payout += payoutConfig.betTop2D * payoutConfig.direct2D;   // 2ตัวบน (บาทละ 70)
-    if (is2BotExact) payout += payoutConfig.betBot2D * payoutConfig.direct2D;   // 2ตัวล่าง (บาทละ 70)
+    if (is2TopExact) payout += payoutConfig.betTop2D * payoutConfig.direct2D;   // 2ตัวบนตรง (บาทละ 70)
+    if (is2TopRev) payout += betTopRev * payoutConfig.direct2D;                 // 2ตัวบนกลับ (บาทละ 70)
+    if (is2BotExact) payout += payoutConfig.betBot2D * payoutConfig.direct2D;   // 2ตัวล่างตรง (บาทละ 70)
+    if (is2BotRev) payout += betBotRev * payoutConfig.direct2D;                 // 2ตัวล่างกลับ (บาทละ 70)
 
     totalGrossPayout += payout;
     const netPnL = payout - cost;
@@ -163,7 +180,9 @@ export function runBacktest(
       is3Exact,
       is3Tod,
       is2TopExact,
+      is2TopRev,
       is2BotExact,
+      is2BotRev,
       matchedTopCount,
       matchedBotCount,
       simulatedPnL: netPnL,
@@ -178,9 +197,13 @@ export function runBacktest(
   }
 
   const total = rows.length;
-  const anyWinCount = rows.filter(r => r.is3Exact || r.is3Tod || r.is2TopExact || r.is2BotExact).length;
+  const anyWinCount = rows.filter(r =>
+    r.is3Exact || r.is3Tod || r.is2TopExact || r.is2TopRev || r.is2BotExact || r.is2BotRev
+  ).length;
   const winRate = total > 0 ? (anyWinCount / total) * 100 : 0;
-  const costPerDraw = (payoutConfig.betDirect3D + payoutConfig.betTod3D + payoutConfig.betTop2D + payoutConfig.betBot2D) || 100;
+  const betTopRev = payoutConfig.betTop2DRev ?? 50;
+  const betBotRev = payoutConfig.betBot2DRev ?? 50;
+  const costPerDraw = (payoutConfig.betDirect3D + payoutConfig.betTod3D + payoutConfig.betTop2D + betTopRev + payoutConfig.betBot2D + betBotRev) || 400;
   const totalCost = total * costPerDraw;
   const roi = totalCost > 0 ? (runningPnL / totalCost) * 100 : 0;
   const riskRewardRatio = totalCost > 0 ? totalGrossPayout / totalCost : 0;
@@ -192,7 +215,9 @@ export function runBacktest(
     tod3Hits,
     tod3Rate: total > 0 ? (tod3Hits / total) * 100 : 0,
     exact2TopHits,
+    rev2TopHits,
     exact2BotHits,
+    rev2BotHits,
     hit1PlusTop,
     hit1PlusTopRate: total > 0 ? (hit1PlusTop / total) * 100 : 0,
     totalProfit: runningPnL,
@@ -362,18 +387,25 @@ export function autoOptimizeFullFormula(
     }
   }
 
-  // Step 1: Optimize 2D Bot (b1, b2) jointly via bitmask intersection
-  const topB1 = [...cand3].sort((a, b) => b.cb1 - a.cb1).slice(0, 260);
-  const topB2 = [...cand3].sort((a, b) => b.cb2 - a.cb2).slice(0, 260);
-  let bestBotH = -1;
+  // Step 1: Optimize 2D Bot (b1, b2) jointly (Direct + Reverse 50x50) via bitmask intersection
+  const topB1 = [...cand3].sort((a, b) => (b.cb1 + b.cb2) - (a.cb1 + a.cb2)).slice(0, 300);
+  const topB2 = [...cand3].sort((a, b) => (b.cb2 + b.cb1) - (a.cb2 + a.cb1)).slice(0, 300);
+  let bestBotScore = -1;
   let bestB1: DigitFormula = DEFAULT_FORMULA.bot1;
   let bestB2: DigitFormula = DEFAULT_FORMULA.bot2;
 
+  const wBotDirect = (payoutConfig.betBot2D * payoutConfig.direct2D) || 3500;
+  const wBotRev = ((payoutConfig.betBot2DRev ?? 50) * payoutConfig.direct2D);
+
   for (const b1 of topB1) {
     for (const b2 of topB2) {
-      const h = popcntBigInt(b1.mb1 & b2.mb2);
-      if (h > bestBotH) {
-        bestBotH = h;
+      const exactMask = b1.mb1 & b2.mb2;
+      const revMask = (b1.mb2 & b2.mb1) & (~exactMask);
+      const hExact = popcntBigInt(exactMask);
+      const hRev = popcntBigInt(revMask);
+      const botScore = hExact * wBotDirect + hRev * wBotRev + hExact * 10;
+      if (botScore > bestBotScore) {
+        bestBotScore = botScore;
         bestB1 = { v1: b1.v1, v2: b1.v2, v3: b1.v3, c: b1.c };
         bestB2 = { v1: b2.v1, v2: b2.v2, v3: b2.v3, c: b2.c };
       }
@@ -385,7 +417,7 @@ export function autoOptimizeFullFormula(
   const topD3 = [...cand3].sort((a, b) => b.c3 - a.c3).slice(0, 300);
 
   let maxH23 = 0;
-  let pairs23: { d2: Cand3; d3: Cand3; m23: bigint; h23: number }[] = [];
+  let pairs23: { d2: Cand3; d3: Cand3; m23: bigint; h23: number; r23: number }[] = [];
 
   for (const d2 of topD2) {
     for (const d3 of topD3) {
@@ -393,12 +425,14 @@ export function autoOptimizeFullFormula(
       const h23 = popcntBigInt(m23);
       if (h23 > maxH23) maxH23 = h23;
       if (h23 >= Math.max(2, maxH23 - 1)) {
-        pairs23.push({ d2, d3, m23, h23 });
+        const revMask = (d2.m3 & d3.m2) & (~m23);
+        const r23 = popcntBigInt(revMask);
+        pairs23.push({ d2, d3, m23, h23, r23 });
       }
     }
   }
 
-  pairs23.sort((a, b) => b.h23 - a.h23);
+  pairs23.sort((a, b) => (b.h23 + b.r23) - (a.h23 + a.r23));
   pairs23 = pairs23.slice(0, 80);
 
   const topD1 = [...cand3].sort((a, b) => b.c1 - a.c1).slice(0, 400);
@@ -407,9 +441,10 @@ export function autoOptimizeFullFormula(
   let bestD2: DigitFormula = DEFAULT_FORMULA.digit2;
   let bestD3: DigitFormula = DEFAULT_FORMULA.digit3;
 
-  const w3Exact = (payoutConfig.betDirect3D * payoutConfig.direct3D) || 12500;
-  const w3Tod = (payoutConfig.betTod3D * payoutConfig.tod3D) || 2500;
-  const w2Top = (payoutConfig.betTop2D * payoutConfig.direct2D) || 5250;
+  const w3Exact = (payoutConfig.betDirect3D * payoutConfig.direct3D) || 50000;
+  const w3Tod = (payoutConfig.betTod3D * payoutConfig.tod3D) || 10000;
+  const w2Top = (payoutConfig.betTop2D * payoutConfig.direct2D) || 3500;
+  const w2TopRev = ((payoutConfig.betTop2DRev ?? 50) * payoutConfig.direct2D);
 
   for (const p of pairs23) {
     for (const d1 of topD1) {
@@ -423,7 +458,7 @@ export function autoOptimizeFullFormula(
           if (sort3Digits(p1, p2, p3) === actTopSorted[idx]) t3++;
         }
       }
-      const score = e3 * w3Exact + t3 * w3Tod + p.h23 * w2Top + d1.c1 * 10;
+      const score = e3 * w3Exact + t3 * w3Tod + p.h23 * w2Top + p.r23 * w2TopRev + d1.c1 * 10;
       if (score > bestScore) {
         bestScore = score;
         bestD1 = { v1: d1.v1, v2: d1.v2, v3: d1.v3, c: d1.c };
