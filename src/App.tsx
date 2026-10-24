@@ -29,7 +29,7 @@ import { LotteryDraw, FormulaState, BacktestRow, PayoutConfig, DEFAULT_PAYOUT_CO
 import { playSuccessChime, playTerminalBeep } from './utils/sound';
 import { CheckCircle2 } from 'lucide-react';
 
-const PAYOUT_STORAGE_KEY = 'lotto_pro_payout_config_v3';
+const PAYOUT_STORAGE_KEY = 'lotto_pro_payout_config_v4';
 
 export default function App() {
   const [draws, setDraws] = useState<LotteryDraw[]>(() => getStoredLotteryData());
@@ -38,11 +38,12 @@ export default function App() {
   const [isOptimizing, setIsOptimizing] = useState(false);
   const [syncToast, setSyncToast] = useState<string | null>(null);
 
-  // Custom Payout Rates: 3ตรง 500, โต๊ด 100, 2ตัว 70 | แผน 100x100 / 50x50 / 50x50 รวมงวดละ 400 บาท
+  // Custom Payout Rates: 3ตรง 500, โต๊ด 100, 2ตัว 70 | แผน 100x100 / 25x25 / 25x25 รวมงวดละ 300 บาท
   const [payoutConfig, setPayoutConfig] = useState<PayoutConfig>(() => {
     try {
       localStorage.removeItem('lotto_pro_payout_config_v1');
       localStorage.removeItem('lotto_pro_payout_config_v2');
+      localStorage.removeItem('lotto_pro_payout_config_v3');
       const raw = localStorage.getItem(PAYOUT_STORAGE_KEY);
       if (raw) {
         return JSON.parse(raw);

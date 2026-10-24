@@ -67,8 +67,8 @@ export const TicketModal: React.FC<TicketModalProps> = ({
     `${d[2]}${d[1]}${d[0]}`,
   ]));
 
-  const betTopRev = payoutConfig.betTop2DRev ?? 50;
-  const betBotRev = payoutConfig.betBot2DRev ?? 50;
+  const betTopRev = payoutConfig.betTop2DRev ?? 25;
+  const betBotRev = payoutConfig.betBot2DRev ?? 25;
   const totalBillCost = payoutConfig.betDirect3D + payoutConfig.betTod3D + payoutConfig.betTop2D + betTopRev + payoutConfig.betBot2D + betBotRev;
 
   const direct3DPayout = payoutConfig.betDirect3D * payoutConfig.direct3D;

@@ -20,8 +20,8 @@ export const PayoutSettingsModal: React.FC<PayoutSettingsModalProps> = ({
 
   if (!isOpen) return null;
 
-  const betTopRev = localCfg.betTop2DRev ?? 50;
-  const betBotRev = localCfg.betBot2DRev ?? 50;
+  const betTopRev = localCfg.betTop2DRev ?? 25;
+  const betBotRev = localCfg.betBot2DRev ?? 25;
   const totalBet = localCfg.betDirect3D + localCfg.betTod3D + localCfg.betTop2D + betTopRev + localCfg.betBot2D + betBotRev;
 
   const handleSave = () => {
@@ -195,7 +195,7 @@ export const PayoutSettingsModal: React.FC<PayoutSettingsModalProps> = ({
             className="flex items-center gap-1 text-xs text-gray-400 hover:text-white px-3 py-1.5 rounded bg-gray-800/80 hover:bg-gray-800 transition-colors"
           >
             <RotateCcw size={12} />
-            <span>รีเซ็ตมาตรฐาน (100×100 / 50×50 = 400฿)</span>
+            <span>รีเซ็ตมาตรฐาน (100×100 / 25×25 = 300฿)</span>
           </button>
 
           <button

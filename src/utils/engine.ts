@@ -154,10 +154,10 @@ export function runBacktest(
     if (matchedTopCount >= 1) hit1PlusTop++;
 
     // Simulated P&L per draw based on User's Underground Betting Style:
-    // 3ตัว = 100*100 (ตรง 100 / โต๊ด 100) | 2บน = 50*50 (ตรง 50 / กลับ 50) | 2ล่าง = 50*50 (ตรง 50 / กลับ 50)
-    const betTopRev = payoutConfig.betTop2DRev ?? 50;
-    const betBotRev = payoutConfig.betBot2DRev ?? 50;
-    const cost = (payoutConfig.betDirect3D + payoutConfig.betTod3D + payoutConfig.betTop2D + betTopRev + payoutConfig.betBot2D + betBotRev) || 400;
+    // 3ตัว = 100*100 (ตรง 100 / โต๊ด 100) | 2บน = 25*25 (ตรง 25 / กลับ 25) | 2ล่าง = 25*25 (ตรง 25 / กลับ 25)
+    const betTopRev = payoutConfig.betTop2DRev ?? 25;
+    const betBotRev = payoutConfig.betBot2DRev ?? 25;
+    const cost = (payoutConfig.betDirect3D + payoutConfig.betTod3D + payoutConfig.betTop2D + betTopRev + payoutConfig.betBot2D + betBotRev) || 300;
 
     let payout = 0;
     if (is3Exact) payout += payoutConfig.betDirect3D * payoutConfig.direct3D;   // 3ตรง (บาทละ 500)
@@ -201,9 +201,9 @@ export function runBacktest(
     r.is3Exact || r.is3Tod || r.is2TopExact || r.is2TopRev || r.is2BotExact || r.is2BotRev
   ).length;
   const winRate = total > 0 ? (anyWinCount / total) * 100 : 0;
-  const betTopRev = payoutConfig.betTop2DRev ?? 50;
-  const betBotRev = payoutConfig.betBot2DRev ?? 50;
-  const costPerDraw = (payoutConfig.betDirect3D + payoutConfig.betTod3D + payoutConfig.betTop2D + betTopRev + payoutConfig.betBot2D + betBotRev) || 400;
+  const betTopRev = payoutConfig.betTop2DRev ?? 25;
+  const betBotRev = payoutConfig.betBot2DRev ?? 25;
+  const costPerDraw = (payoutConfig.betDirect3D + payoutConfig.betTod3D + payoutConfig.betTop2D + betTopRev + payoutConfig.betBot2D + betBotRev) || 300;
   const totalCost = total * costPerDraw;
   const roi = totalCost > 0 ? (runningPnL / totalCost) * 100 : 0;
   const riskRewardRatio = totalCost > 0 ? totalGrossPayout / totalCost : 0;
