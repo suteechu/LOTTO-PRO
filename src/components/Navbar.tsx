@@ -10,6 +10,7 @@ interface NavbarProps {
   onOpenPresets: () => void;
   onOpenPayoutSettings: () => void;
   onAutoSync: () => void;
+  isSyncing?: boolean;
   drawCount: number;
   latestDate: string;
   payoutConfig: PayoutConfig;
@@ -23,6 +24,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenPresets,
   onOpenPayoutSettings,
   onAutoSync,
+  isSyncing = false,
   drawCount,
   latestDate,
   payoutConfig,
@@ -128,14 +130,16 @@ export const Navbar: React.FC<NavbarProps> = ({
         {/* Auto Sync Button */}
         <button
           onClick={() => {
+            if (isSyncing) return;
             playTerminalBeep(900);
             onAutoSync();
           }}
-          title="ซิงค์และตรวจงวดใหม่อัตโนมัติตามไทยรัฐ"
-          className="flex items-center gap-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-2.5 py-1.5 rounded text-xs font-bold transition-all"
+          disabled={isSyncing}
+          title="ซิงค์ผลสลากออนไลน์และตรวจงวดใหม่อัตโนมัติ"
+          className="flex items-center gap-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-2.5 py-1.5 rounded text-xs font-bold transition-all disabled:opacity-50"
         >
-          <RefreshCcw size={13} className="animate-spin-hover" />
-          <span className="hidden sm:inline">Auto-Sync</span>
+          <RefreshCcw size={13} className={isSyncing ? "animate-spin text-yellow-400" : "animate-spin-hover"} />
+          <span className="hidden sm:inline">{isSyncing ? 'กำลังดึง...' : 'Auto-Sync'}</span>
         </button>
 
         <button

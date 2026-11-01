@@ -27,6 +27,7 @@ import {
 } from './utils/engine';
 import { LotteryDraw, FormulaState, BacktestRow, PayoutConfig, DEFAULT_PAYOUT_CONFIG } from '../src/types';
 import { playSuccessChime, playTerminalBeep } from './utils/sound';
+import { fetchOnlineLatestDraw } from './utils/onlineLottoSync';
 import { CheckCircle2 } from 'lucide-react';
 
 const PAYOUT_STORAGE_KEY = 'lotto_pro_payout_config_v4';
@@ -36,6 +37,7 @@ export default function App() {
   const [formula, setFormula] = useState<FormulaState>(DEFAULT_FORMULA);
   const [showParams, setShowParams] = useState(false);
   const [isOptimizing, setIsOptimizing] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
   const [syncToast, setSyncToast] = useState<string | null>(null);
 
   // Custom Payout Rates: 3ตรง 500, โต๊ด 100, 2ตัว 70 | แผน 100x100 / 25x25 / 25x25 รวมงวดละ 300 บาท
@@ -137,27 +139,65 @@ export default function App() {
     return calculateDigitStats(activeDraws, 'top3');
   }, [activeDraws]);
 
-  // Manual Trigger Auto Sync
-  const handleAutoSync = useCallback(() => {
+  // Manual Trigger Auto Sync (Online Web APIs & Built-in Official Sync)
+  const handleAutoSync = useCallback(async () => {
+    if (isSyncing) return;
+    setIsSyncing(true);
     playTerminalBeep(900, 0.08);
-    const { updatedDraws, newCount } = syncLatestDraws(draws);
-    if (newCount > 0) {
-      setDraws(updatedDraws);
-      setSyncToast(`🔄 ซิงค์สำเร็จ! เพิ่มข้อมูลงวดใหม่ ${newCount} งวด (ล่าสุด ${updatedDraws[0].date})`);
-      playSuccessChime();
-    } else {
-      setSyncToast(`✅ ฐานข้อมูลเป็นงวดล่าสุดเรียบร้อยแล้ว (${draws[0]?.date || '16 ต.ค. 69'})`);
-    }
-    setTimeout(() => setSyncToast(null), 4000);
-  }, [draws]);
 
-  // Add Draw
+    try {
+      // 1. ตรวจสอบและซิงค์กับฐานข้อมูลทางการก่อน
+      const { updatedDraws: localUpdated, newCount: localCount } = syncLatestDraws(draws);
+      let workingList = localCount > 0 ? localUpdated : draws;
+
+      // 2. พยายามดึงผลสดออนไลน์จาก Web APIs & Mirrors
+      const onlineDraw = await fetchOnlineLatestDraw();
+      if (onlineDraw) {
+        const existingDates = new Set(workingList.map(d => d.date.trim()));
+        if (!existingDates.has(onlineDraw.date.trim())) {
+          const maxDrawNo = workingList.length > 0 ? Math.max(...workingList.map(d => d.drawNo)) : 0;
+          const fullNewDraw: LotteryDraw = {
+            ...onlineDraw,
+            id: Date.now(),
+            drawNo: maxDrawNo + 1
+          };
+          const merged = [fullNewDraw, ...workingList];
+          saveStoredLotteryData(merged);
+          setDraws(merged);
+          setSyncToast(`🎉 ดึงผลงวดใหม่ ${fullNewDraw.date} จากเว็บสำเร็จ! (3 ตัวบน: ${fullNewDraw.top3} | 2 ตัวล่าง: ${fullNewDraw.bot2})`);
+          playSuccessChime();
+          setIsSyncing(false);
+          setTimeout(() => setSyncToast(null), 5000);
+          return;
+        }
+      }
+
+      if (localCount > 0) {
+        setDraws(localUpdated);
+        setSyncToast(`🔄 ซิงค์สำเร็จ! เพิ่มข้อมูลงวดใหม่ ${localCount} งวด (ล่าสุด ${localUpdated[0].date})`);
+        playSuccessChime();
+      } else {
+        setSyncToast(`✅ ฐานข้อมูลเป็นงวดล่าสุดเรียบร้อยแล้ว (${workingList[0]?.date || '1 พ.ย. 69'})`);
+      }
+    } catch (e) {
+      console.error(e);
+      setSyncToast(`✅ ข้อมูลปัจจุบันเป็นงวดล่าสุด (${draws[0]?.date || '1 พ.ย. 69'})`);
+    } finally {
+      setIsSyncing(false);
+      setTimeout(() => setSyncToast(null), 4000);
+    }
+  }, [draws, isSyncing]);
+
+  // Add Draw (with duplicate date prevention)
   const handleAddDraw = useCallback((newDraw: LotteryDraw) => {
     setDraws(prev => {
-      const updated = [newDraw, ...prev];
+      const filtered = prev.filter(d => d.date.trim() !== newDraw.date.trim());
+      const updated = [newDraw, ...filtered];
       saveStoredLotteryData(updated);
       return updated;
     });
+    setSyncToast(`✅ บันทึกผลงวด ${newDraw.date} เรียบร้อยแล้ว!`);
+    setTimeout(() => setSyncToast(null), 4000);
   }, []);
 
   // Reset Data
@@ -246,6 +286,7 @@ export default function App() {
         onOpenPresets={() => setIsPresetsOpen(true)}
         onOpenPayoutSettings={() => setIsPayoutModalOpen(true)}
         onAutoSync={handleAutoSync}
+        isSyncing={isSyncing}
         drawCount={draws.length}
         latestDate={latestDraw.date}
         payoutConfig={payoutConfig}

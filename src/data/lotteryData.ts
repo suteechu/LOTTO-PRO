@@ -21,6 +21,7 @@ export const VARIABLES: VariableDef[] = [
 
 // ข้อมูลผลสลากกินแบ่งรัฐบาลของจริง ปี 2569 ตรวจสอบตรงกับกองสลากฯ / Sanook / Thairath 100%
 export const OFFICIAL_LATEST_DRAWS: LotteryDraw[] = [
+  { id: 40, drawNo: 40, date: "1 พ.ย. 69",  top3: "224", bot2: "85", full6: "423224", note: "รางวัลที่ 1: 423224 | 2 ตัวท้าย: 85 | หน้า 300, 950 | หลัง 393, 804" },
   { id: 39, drawNo: 39, date: "16 ต.ค. 69", top3: "781", bot2: "48", full6: "011781", note: "รางวัลที่ 1: 011781 | 2 ตัวท้าย: 48" },
   { id: 38, drawNo: 38, date: "1 ต.ค. 69",  top3: "701", bot2: "70", full6: "402701", note: "รางวัลที่ 1: 402701 | 2 ตัวท้าย: 70" },
   { id: 37, drawNo: 37, date: "16 ก.ย. 69", top3: "640", bot2: "64", full6: "730640", note: "รางวัลที่ 1: 730640 | 2 ตัวท้าย: 64" },
@@ -64,22 +65,51 @@ export const OFFICIAL_LATEST_DRAWS: LotteryDraw[] = [
 
 export const INITIAL_LOTTERY_DATA: LotteryDraw[] = OFFICIAL_LATEST_DRAWS;
 
-const STORAGE_KEY = 'lotto_pro_custom_draws_v3';
+const STORAGE_KEY = 'lotto_pro_custom_draws_v4';
+
+/**
+ * รวมรายการผลหวยจาก LocalStorage และฐานข้อมูลอย่างเป็นทางการ โดยไม่ทำข้อมูลงวดใหม่หรือที่ผู้ใช้เพิ่มหาย
+ */
+export function mergeDraws(existing: LotteryDraw[], official: LotteryDraw[] = OFFICIAL_LATEST_DRAWS): LotteryDraw[] {
+  const map = new Map<string, LotteryDraw>();
+
+  // 1. เพิ่มชุดทางการเข้าไปเป็นฐาน
+  for (const off of official) {
+    const key = off.date.trim();
+    map.set(key, off);
+  }
+
+  // 2. รวมงวดที่ผู้ใช้เพิ่มเอง หรือดึงมาจากเว็บออนไลน์ (รักษาข้อมูลงวดที่ไม่มีในทางการ)
+  for (const ex of existing) {
+    const key = ex.date.trim();
+    if (!map.has(key)) {
+      map.set(key, ex);
+    } else {
+      const off = map.get(key)!;
+      map.set(key, { ...off, ...ex });
+    }
+  }
+
+  // 3. เรียงลำดับจากงวดล่าสุดไปอดีต
+  const merged = Array.from(map.values()).sort((a, b) => {
+    if (b.drawNo !== a.drawNo) return b.drawNo - a.drawNo;
+    return b.id - a.id;
+  });
+
+  return merged;
+}
 
 export function getStoredLotteryData(): LotteryDraw[] {
   try {
-    // Clean old caches if any
-    localStorage.removeItem('lotto_pro_custom_draws_v1');
-    localStorage.removeItem('lotto_pro_custom_draws_v2');
-
-    const raw = localStorage.getItem(STORAGE_KEY);
+    // อ่านจาก v4 หรือแคชเดิม v3 เพื่อไม่ให้ข้อมูลหาย
+    const raw = localStorage.getItem(STORAGE_KEY) || localStorage.getItem('lotto_pro_custom_draws_v3');
     if (raw) {
       const parsed = JSON.parse(raw);
       if (Array.isArray(parsed) && parsed.length > 0) {
-        // Check if latest date matches
-        if (parsed[0].date === OFFICIAL_LATEST_DRAWS[0].date && parsed[0].top3 === OFFICIAL_LATEST_DRAWS[0].top3) {
-          return parsed;
-        }
+        // ผสานเข้ากับชุดทางการล่าสุด (ดึงงวด 1 พ.ย. 69 เข้ามาทันทีถ้ายังไม่มี)
+        const merged = mergeDraws(parsed, OFFICIAL_LATEST_DRAWS);
+        saveStoredLotteryData(merged);
+        return merged;
       }
     }
   } catch (e) {
@@ -100,6 +130,7 @@ export function saveStoredLotteryData(data: LotteryDraw[]): void {
 export function resetStoredLotteryData(): LotteryDraw[] {
   try {
     localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem('lotto_pro_custom_draws_v3');
   } catch (e) {
     console.error('Failed to reset lottery data', e);
   }
@@ -107,20 +138,14 @@ export function resetStoredLotteryData(): LotteryDraw[] {
 }
 
 export function syncLatestDraws(currentDraws: LotteryDraw[]): { updatedDraws: LotteryDraw[]; newCount: number } {
-  // If current data top draw is not matching the official verified top draw
-  if (!currentDraws.length || currentDraws[0].top3 !== OFFICIAL_LATEST_DRAWS[0].top3 || currentDraws[0].date !== OFFICIAL_LATEST_DRAWS[0].date) {
-    saveStoredLotteryData(OFFICIAL_LATEST_DRAWS);
-    return { updatedDraws: OFFICIAL_LATEST_DRAWS, newCount: OFFICIAL_LATEST_DRAWS.length };
+  const merged = mergeDraws(currentDraws, OFFICIAL_LATEST_DRAWS);
+  const existingDates = new Set(currentDraws.map(d => d.date.trim()));
+  const newItems = merged.filter(d => !existingDates.has(d.date.trim()));
+
+  if (newItems.length > 0) {
+    saveStoredLotteryData(merged);
+    return { updatedDraws: merged, newCount: newItems.length };
   }
 
-  const existingDates = new Set(currentDraws.map(d => d.date));
-  const newOfficial = OFFICIAL_LATEST_DRAWS.filter(d => !existingDates.has(d.date));
-
-  if (newOfficial.length === 0) {
-    return { updatedDraws: currentDraws, newCount: 0 };
-  }
-
-  const merged = [...newOfficial, ...currentDraws].sort((a, b) => b.drawNo - a.drawNo);
-  saveStoredLotteryData(merged);
-  return { updatedDraws: merged, newCount: newOfficial.length };
+  return { updatedDraws: currentDraws, newCount: 0 };
 }
