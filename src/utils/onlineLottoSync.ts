@@ -160,8 +160,8 @@ export function parseLottoText(text: string): ParsedLottoResult | null {
 
 function decodeHtmlBytes(buffer: ArrayBuffer, contentType = ''): string {
   const utf8 = new TextDecoder('utf-8').decode(buffer);
-  const metaWin874 = /charset\s*=\s*["']?(?:windows-874|tis-620)/i.test(utf8);
-  const headerWin874 = /charset\s*=\s*(?:windows-874|tis-620)/i.test(contentType);
+  const metaWin874 = /charset\s*=\s*["']?(?:windows?-874|tis-620)/i.test(utf8);
+  const headerWin874 = /charset\s*=\s*(?:windows?-874|tis-620)/i.test(contentType);
 
   if (metaWin874 || headerWin874 || utf8.includes('\uFFFD')) {
     try {
@@ -280,9 +280,45 @@ export function parseThaiORCHtml(html: string): LotteryDraw[] {
   return draws;
 }
 
+/**
+ * แกะผลสลากจากข้อความ Markdown ที่ส่งกลับจาก Jina Reader (https://r.jina.ai/...)
+ */
+export function parseThaiORCMarkdown(markdown: string): LotteryDraw[] {
+  if (!markdown || typeof markdown !== 'string') return [];
+
+  const draws: LotteryDraw[] = [];
+  const seen = new Set<string>();
+  const rowRegex =
+    /\[(\d{1,2}\/\d{1,2}\/25\d{2})\]\([^)]*jackpot\.php[^)]*\)(?:\[\d{1,2}\/\d{1,2}\/25\d{2}\]\([^)]*\))*[ \t|]*(\d{6})[ \t|]+(\d{3})[ \t|]+(\d{3})[ \t|]+(\d{3})[ \t|]+(\d{3})[ \t|]+(\d{2})\b/g;
+
+  let match: RegExpExecArray | null;
+  while ((match = rowRegex.exec(markdown)) !== null) {
+    const parsed = buildDrawFromCells(
+      match[1],
+      match[2],
+      `${match[3]} ${match[4]}`,
+      `${match[5]} ${match[6]}`,
+      match[7]
+    );
+    if (parsed && !seen.has(parsed.date)) {
+      seen.add(parsed.date);
+      draws.push(parsed);
+    }
+  }
+
+  return draws;
+}
+
+export function parseThaiORCResponse(content: string): LotteryDraw[] {
+  const fromHtml = parseThaiORCHtml(content);
+  if (fromHtml.length > 0) return fromHtml;
+  return parseThaiORCMarkdown(content);
+}
+
 interface FetchProxyStrategy {
   name: string;
-  fetchHtml: (targetUrl: string, signal: AbortSignal) => Promise<string | null>;
+  timeoutMs: number;
+  fetchContent: (targetUrl: string, signal: AbortSignal) => Promise<string | null>;
 }
 
 function isLocalhost(): boolean {
@@ -294,24 +330,27 @@ function isLocalhost(): boolean {
 
 const PROXY_STRATEGIES: FetchProxyStrategy[] = [
   {
+    name: 'Jina Reader',
+    timeoutMs: 12000,
+    fetchContent: async (targetUrl, signal) => {
+      const res = await fetch(`https://r.jina.ai/${targetUrl}`, { signal });
+      if (!res.ok) return null;
+      return await res.text();
+    }
+  },
+  {
     name: 'AllOrigins Raw',
-    fetchHtml: async (targetUrl, signal) => {
+    timeoutMs: 6000,
+    fetchContent: async (targetUrl, signal) => {
       const res = await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`, { signal });
       if (!res.ok) return null;
       return decodeHtmlBytes(await res.arrayBuffer(), res.headers.get('content-type') || '');
     }
   },
   {
-    name: 'CorsProxy.io',
-    fetchHtml: async (targetUrl, signal) => {
-      const res = await fetch(`https://corsproxy.io/?url=${encodeURIComponent(targetUrl)}`, { signal });
-      if (!res.ok) return null;
-      return decodeHtmlBytes(await res.arrayBuffer(), res.headers.get('content-type') || '');
-    }
-  },
-  {
     name: 'AllOrigins JSON',
-    fetchHtml: async (targetUrl, signal) => {
+    timeoutMs: 6000,
+    fetchContent: async (targetUrl, signal) => {
       const res = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}`, { signal });
       if (!res.ok) return null;
       const data = await res.json();
@@ -320,16 +359,9 @@ const PROXY_STRATEGIES: FetchProxyStrategy[] = [
   },
   {
     name: 'CodeTabs Proxy',
-    fetchHtml: async (targetUrl, signal) => {
+    timeoutMs: 6000,
+    fetchContent: async (targetUrl, signal) => {
       const res = await fetch(`https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(targetUrl)}`, { signal });
-      if (!res.ok) return null;
-      return decodeHtmlBytes(await res.arrayBuffer(), res.headers.get('content-type') || '');
-    }
-  },
-  {
-    name: 'Direct',
-    fetchHtml: async (targetUrl, signal) => {
-      const res = await fetch(targetUrl, { signal });
       if (!res.ok) return null;
       return decodeHtmlBytes(await res.arrayBuffer(), res.headers.get('content-type') || '');
     }
@@ -338,8 +370,7 @@ const PROXY_STRATEGIES: FetchProxyStrategy[] = [
 
 async function fetchThaiORCPage(
   page: number,
-  preferredStrategyIdx = -1,
-  timeoutMs = 8000
+  preferredStrategyIdx = -1
 ): Promise<{ draws: LotteryDraw[]; strategyIdx: number; proxyName: string } | null> {
   const query = page <= 1 ? '' : `?pg=${page}`;
   const targetUrl = `${THAIORC_LOTTO_URL}${query}`;
@@ -347,13 +378,13 @@ async function fetchThaiORCPage(
   // เมื่อรันบน Vite Dev Server (localhost) ให้ลองผ่าน local proxy ก่อนเพื่อหลีกเลี่ยง CORS
   if (isLocalhost() && preferredStrategyIdx === -1) {
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    const timer = setTimeout(() => controller.abort(), 8000);
     try {
       const res = await fetch(`/api/thaiorc${query}`, { signal: controller.signal });
       clearTimeout(timer);
       if (res.ok) {
         const html = decodeHtmlBytes(await res.arrayBuffer(), res.headers.get('content-type') || '');
-        const parsed = parseThaiORCHtml(html);
+        const parsed = parseThaiORCResponse(html);
         if (parsed.length > 0) {
           return { draws: parsed, strategyIdx: -1, proxyName: 'Vite Local Proxy' };
         }
@@ -372,14 +403,14 @@ async function fetchThaiORCPage(
   for (const idx of order) {
     const strategy = PROXY_STRATEGIES[idx];
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    const timer = setTimeout(() => controller.abort(), strategy.timeoutMs);
 
     try {
-      const html = await strategy.fetchHtml(targetUrl, controller.signal);
+      const content = await strategy.fetchContent(targetUrl, controller.signal);
       clearTimeout(timer);
-      if (!html) continue;
+      if (!content) continue;
 
-      const parsed = parseThaiORCHtml(html);
+      const parsed = parseThaiORCResponse(content);
       if (parsed.length > 0) {
         return { draws: parsed, strategyIdx: idx, proxyName: strategy.name };
       }

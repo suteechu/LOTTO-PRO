@@ -100,19 +100,10 @@ export const TicketModal: React.FC<TicketModalProps> = ({
 ━━━━━━━━━━━━━━━━━━
 🤖 บันทึกจาก LOTTO-PRO Quantitative Engine`
 :
-`🎯 โพยแนวทาง LOTTO-PRO TERMINAL
-━━━━━━━━━━━━━━━━━━
-✨ ประจำ${dateTitle}
-💰 อัตราจ่าย: 3ตรง ${payoutConfig.direct3D} | โต๊ด ${payoutConfig.tod3D} | 2ตัว ${payoutConfig.direct2D}
-
-📝 รายการโพย (รวมทุน ${totalBillCost}฿):
+`📝 รายการซื้อ (รวมทุน ${totalBillCost}฿):
 🏆 3 ตัว: ${top3} = ${payoutConfig.betDirect3D}*${payoutConfig.betTod3D} (ตรง ${payoutConfig.betDirect3D} โต๊ด ${payoutConfig.betTod3D})
 ⭐ 2 บน: ${top2} = ${payoutConfig.betTop2D}*${betTopRev} (${top2}=${payoutConfig.betTop2D} | ${top2Rev}=${betTopRev})
-🌟 2 ล่าง: ${bot2} = ${payoutConfig.betBot2D}*${betBotRev} (${bot2}=${payoutConfig.betBot2D} | ${bot2Rev}=${betBotRev})
-
-⚡ เลขวิ่งบน: ${d[1]}, ${d[2]} | วิ่งล่าง: ${bd[0]}, ${bd[1]}
-━━━━━━━━━━━━━━━━━━
-🤖 วิเคราะห์เชิงสถิติด้วย LOTTO-PRO Quant AI Engine`;
+🌟 2 ล่าง: ${bot2} = ${payoutConfig.betBot2D}*${betBotRev} (${bot2}=${payoutConfig.betBot2D} | ${bot2Rev}=${betBotRev})`;
 
   const handleCopy = () => {
     navigator.clipboard.writeText(shareText);
