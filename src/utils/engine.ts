@@ -5,8 +5,8 @@ export const DEFAULT_FORMULA: FormulaState = {
   digit1: { v1: 'hu', v2: 'btu', v3: 'tbt', c: 2 },
   digit2: { v1: 'ht', v2: 'tbu', v3: 'ubu', c: 0 },
   digit3: { v1: 't', v2: 'u', v3: 'bt', c: 7 },
-  bot1: { v1: 'ht', v2: 'hu', v3: 'hbt', c: 7 },
-  bot2: { v1: 'bt', v2: 'bu', v3: 'hbt', c: 4 }
+  bot1: { v1: 'u', v2: 'ht', v3: 'hbu', c: 2 },
+  bot2: { v1: 'tu', v2: 'hbu', v3: 'hbu', c: 8 }
 };
 
 export function getVariableValues(top3: string, bot2: string): Record<VariableId, number> {
@@ -388,8 +388,8 @@ export function autoOptimizeFullFormula(
   }
 
   // Step 1: Optimize 2D Bot (b1, b2) jointly (Direct + Reverse 50x50) via bitmask intersection
-  const topB1 = [...cand3].sort((a, b) => (b.cb1 + b.cb2) - (a.cb1 + a.cb2)).slice(0, 300);
-  const topB2 = [...cand3].sort((a, b) => (b.cb2 + b.cb1) - (a.cb2 + a.cb1)).slice(0, 300);
+  const topB1 = [...cand3].sort((a, b) => (b.cb1 + b.cb2) - (a.cb1 + a.cb2)).slice(0, 450);
+  const topB2 = [...cand3].sort((a, b) => (b.cb2 + b.cb1) - (a.cb2 + a.cb1)).slice(0, 450);
   let bestBotScore = -1;
   let bestB1: DigitFormula = DEFAULT_FORMULA.bot1;
   let bestB2: DigitFormula = DEFAULT_FORMULA.bot2;
@@ -413,8 +413,8 @@ export function autoOptimizeFullFormula(
   }
 
   // Step 2: Optimize 2D Top (d2, d3) & 3D Direct/Tod (d1) jointly
-  const topD2 = [...cand3].sort((a, b) => b.c2 - a.c2).slice(0, 300);
-  const topD3 = [...cand3].sort((a, b) => b.c3 - a.c3).slice(0, 300);
+  const topD2 = [...cand3].sort((a, b) => b.c2 - a.c2).slice(0, 450);
+  const topD3 = [...cand3].sort((a, b) => b.c3 - a.c3).slice(0, 450);
 
   let maxH23 = 0;
   let pairs23: { d2: Cand3; d3: Cand3; m23: bigint; h23: number; r23: number }[] = [];
@@ -424,7 +424,7 @@ export function autoOptimizeFullFormula(
       const m23 = d2.m2 & d3.m3;
       const h23 = popcntBigInt(m23);
       if (h23 > maxH23) maxH23 = h23;
-      if (h23 >= Math.max(2, maxH23 - 1)) {
+      if (h23 >= Math.max(2, maxH23 - 3)) {
         const revMask = (d2.m3 & d3.m2) & (~m23);
         const r23 = popcntBigInt(revMask);
         pairs23.push({ d2, d3, m23, h23, r23 });
@@ -432,10 +432,10 @@ export function autoOptimizeFullFormula(
     }
   }
 
-  pairs23.sort((a, b) => (b.h23 + b.r23) - (a.h23 + a.r23));
-  pairs23 = pairs23.slice(0, 80);
+  pairs23.sort((a, b) => (b.h23 * 2 + b.r23) - (a.h23 * 2 + a.r23));
+  pairs23 = pairs23.slice(0, 200);
 
-  const topD1 = [...cand3].sort((a, b) => b.c1 - a.c1).slice(0, 400);
+  const topD1 = [...cand3].sort((a, b) => b.c1 - a.c1).slice(0, 500);
   let bestScore = -Infinity;
   let bestD1: DigitFormula = DEFAULT_FORMULA.digit1;
   let bestD2: DigitFormula = DEFAULT_FORMULA.digit2;

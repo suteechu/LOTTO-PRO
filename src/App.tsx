@@ -174,7 +174,10 @@ export default function App() {
       }
     });
 
-    const sortedYears = Array.from(counts.keys()).sort((a, b) => Number(b) - Number(a));
+    const latestY = getLatestYearBE(draws);
+    const sortedYears = Array.from(counts.keys())
+      .filter(y => y === latestY || (counts.get(y) || 0) >= 5)
+      .sort((a, b) => Number(b) - Number(a));
     return [
       { id: 'all', label: 'ทั้งหมด', count: draws.length },
       ...sortedYears.map(year => ({
