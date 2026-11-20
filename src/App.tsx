@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback, useEffect } from 'react';
+import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { Navbar } from './components/Navbar';
 import { TickerBar } from './components/TickerBar';
 import { PredictionHero } from './components/PredictionHero';
@@ -16,6 +16,8 @@ import {
   saveStoredLotteryData,
   resetStoredLotteryData,
   syncLatestDraws,
+  mergeOnlineDraws,
+  sortAndRenumberDraws,
   INITIAL_LOTTERY_DATA
 } from './data/lotteryData';
 import {
@@ -27,7 +29,11 @@ import {
 } from './utils/engine';
 import { LotteryDraw, FormulaState, BacktestRow, PayoutConfig, DEFAULT_PAYOUT_CONFIG } from '../src/types';
 import { playSuccessChime, playTerminalBeep } from './utils/sound';
-import { fetchOnlineLatestDraw } from './utils/onlineLottoSync';
+import {
+  fetchOnlineDrawsFromThaiORC,
+  extractThaiYearBE,
+  formatThaiDateShort
+} from './utils/onlineLottoSync';
 import { CheckCircle2 } from 'lucide-react';
 
 const PAYOUT_STORAGE_KEY = 'lotto_pro_payout_config_v4';
@@ -39,6 +45,23 @@ export default function App() {
   const [isOptimizing, setIsOptimizing] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncToast, setSyncToast] = useState<string | null>(null);
+  const drawsRef = useRef(draws);
+  drawsRef.current = draws;
+  const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const showToast = useCallback((message: string, durationMs = 4500) => {
+    if (toastTimerRef.current) {
+      clearTimeout(toastTimerRef.current);
+      toastTimerRef.current = null;
+    }
+    setSyncToast(message);
+    if (durationMs > 0) {
+      toastTimerRef.current = setTimeout(() => {
+        setSyncToast(null);
+        toastTimerRef.current = null;
+      }, durationMs);
+    }
+  }, []);
 
   // Custom Payout Rates: 3ตรง 500, โต๊ด 100, 2ตัว 70 | แผน 100x100 / 25x25 / 25x25 รวมงวดละ 300 บาท
   const [payoutConfig, setPayoutConfig] = useState<PayoutConfig>(() => {
@@ -71,45 +94,70 @@ export default function App() {
     try {
       localStorage.setItem(PAYOUT_STORAGE_KEY, JSON.stringify(newCfg));
     } catch {}
-    setSyncToast(`💰 อัปเดตอัตราจ่าย: 3ตรง ${newCfg.direct3D}฿ | โต๊ด ${newCfg.tod3D}฿ | 2ตัว ${newCfg.direct2D}฿ เรียบร้อย!`);
-    setTimeout(() => setSyncToast(null), 4000);
-  }, []);
+    showToast(`💰 อัปเดตอัตราจ่าย: 3ตรง ${newCfg.direct3D}฿ | โต๊ด ${newCfg.tod3D}฿ | 2ตัว ${newCfg.direct2D}฿ เรียบร้อย!`, 4000);
+  }, [showToast]);
 
-  // Auto-sync on startup
+  // Auto-sync on startup (local baseline + non-blocking ThaiORC page 1 check)
   useEffect(() => {
-    const { updatedDraws, newCount } = syncLatestDraws(draws);
-    if (newCount > 0) {
-      setDraws(updatedDraws);
-      setSyncToast(`⚡ ระบบ Auto-Update ดึงข้อมูลงวดใหม่เพิ่ม ${newCount} งวด (ล่าสุด ${updatedDraws[0].date}) เรียบร้อยแล้ว!`);
-      playSuccessChime();
-      setTimeout(() => setSyncToast(null), 5000);
-    }
-  }, []);
+    let cancelled = false;
+    const { updatedDraws: localUpdated, newCount: localCount } = syncLatestDraws(drawsRef.current);
 
-  // Selected Year Filter ('all' | '2569' | '2568')
+    if (localCount > 0) {
+      drawsRef.current = localUpdated;
+      setDraws(localUpdated);
+      showToast(`⚡ ระบบ Auto-Update ดึงข้อมูลงวดใหม่เพิ่ม ${localCount} งวด (ล่าสุด ${localUpdated[0].date}) เรียบร้อยแล้ว!`, 5000);
+      playSuccessChime();
+    }
+
+    fetchOnlineDrawsFromThaiORC({ maxPages: 1 })
+      .then((res) => {
+        if (cancelled || res.draws.length === 0) return;
+        const { updatedDraws, newCount } = mergeOnlineDraws(drawsRef.current, res.draws);
+        if (newCount > 0) {
+          drawsRef.current = updatedDraws;
+          setDraws(updatedDraws);
+          showToast(`⚡ ซิงค์ผลล่าสุดจาก ${res.source} เพิ่ม ${newCount} งวด (ล่าสุด ${updatedDraws[0]?.date}) เรียบร้อย!`, 5000);
+          playSuccessChime();
+        }
+      })
+      .catch(() => {
+        // ข้ามเงียบๆ หากเปิดใช้งานแบบออฟไลน์
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [showToast]);
+
+  // Selected Year Filter ('all' | '2569' | '2568' | ...)
   const [selectedYear, setSelectedYear] = useState<string>('all');
 
-  // Year counts
+  // Dynamic year counts derived from stored draws
   const yearCounts = useMemo(() => {
-    let count69 = 0;
-    let count68 = 0;
+    const counts = new Map<string, number>();
     draws.forEach(d => {
-      if (d.date.includes(' 69') || d.date.endsWith('69')) count69++;
-      else if (d.date.includes(' 68') || d.date.endsWith('68')) count68++;
+      const yearBE = extractThaiYearBE(d.date);
+      if (yearBE) {
+        counts.set(yearBE, (counts.get(yearBE) || 0) + 1);
+      }
     });
+
+    const sortedYears = Array.from(counts.keys()).sort((a, b) => Number(b) - Number(a));
     return [
       { id: 'all', label: 'ทั้งหมด', count: draws.length },
-      { id: '2569', label: 'ปี 2569', count: count69 },
-      { id: '2568', label: 'ปี 2568', count: count68 }
+      ...sortedYears.map(year => ({
+        id: year,
+        label: `ปี ${year}`,
+        count: counts.get(year) || 0
+      }))
     ];
   }, [draws]);
 
   // Active draws filtered by selected year (plus 1 previous draw as input)
   const activeDraws = useMemo(() => {
     if (selectedYear === 'all') return draws;
-    const shortYear = selectedYear.slice(-2); // '69' or '68'
     const yearIndices = draws
-      .map((d, idx) => (d.date.includes(` ${shortYear}`) || d.date.endsWith(shortYear) ? idx : -1))
+      .map((d, idx) => (extractThaiYearBE(d.date) === selectedYear ? idx : -1))
       .filter(idx => idx !== -1);
 
     if (yearIndices.length === 0) return draws;
@@ -139,76 +187,86 @@ export default function App() {
     return calculateDigitStats(activeDraws, 'top3');
   }, [activeDraws]);
 
-  // Manual Trigger Auto Sync (Online Web APIs & Built-in Official Sync)
+  // Manual Trigger Auto Sync (ThaiORC 10-year historical pages)
   const handleAutoSync = useCallback(async () => {
     if (isSyncing) return;
     setIsSyncing(true);
     playTerminalBeep(900, 0.08);
+    showToast('🔄 กำลังเชื่อมต่อดึงผลสลากย้อนหลังจาก ThaiORC...', 0);
 
     try {
       // 1. ตรวจสอบและซิงค์กับฐานข้อมูลทางการก่อน
-      const { updatedDraws: localUpdated, newCount: localCount } = syncLatestDraws(draws);
-      let workingList = localCount > 0 ? localUpdated : draws;
+      const { updatedDraws: localUpdated, newCount: localCount } = syncLatestDraws(drawsRef.current);
+      const workingList = localCount > 0 ? localUpdated : drawsRef.current;
 
-      // 2. พยายามดึงผลสดออนไลน์จาก Web APIs & Mirrors
-      const onlineDraw = await fetchOnlineLatestDraw();
-      if (onlineDraw) {
-        const existingDates = new Set(workingList.map(d => d.date.trim()));
-        if (!existingDates.has(onlineDraw.date.trim())) {
-          const maxDrawNo = workingList.length > 0 ? Math.max(...workingList.map(d => d.drawNo)) : 0;
-          const fullNewDraw: LotteryDraw = {
-            ...onlineDraw,
-            id: Date.now(),
-            drawNo: maxDrawNo + 1
-          };
-          const merged = [fullNewDraw, ...workingList];
-          saveStoredLotteryData(merged);
-          setDraws(merged);
-          setSyncToast(`🎉 ดึงผลงวดใหม่ ${fullNewDraw.date} จากเว็บสำเร็จ! (3 ตัวบน: ${fullNewDraw.top3} | 2 ตัวล่าง: ${fullNewDraw.bot2})`);
+      // 2. ดึงผลย้อนหลังหลายหน้าจาก horoscope.thaiorc.com/lotto/thai/stats/lottery-years10.php
+      const result = await fetchOnlineDrawsFromThaiORC({
+        maxPages: 8,
+        onProgress: (page, collectedCount) => {
+          showToast(`🔄 กำลังดึงข้อมูลจาก ThaiORC หน้า ${page}... (พบ ${collectedCount} งวด)`, 0);
+        }
+      });
+
+      if (result.draws.length > 0) {
+        const { updatedDraws, newCount, updatedCount } = mergeOnlineDraws(workingList, result.draws);
+        if (newCount > 0 || updatedCount > 0) {
+          drawsRef.current = updatedDraws;
+          setDraws(updatedDraws);
+          showToast(
+            `🎉 ซิงค์จาก ${result.source} สำเร็จ! เพิ่มใหม่ ${newCount} งวด` +
+            `${updatedCount > 0 ? ` • อัปเดต ${updatedCount} งวด` : ''} ` +
+            `(รวม ${updatedDraws.length} งวด | ล่าสุด ${updatedDraws[0]?.date})`,
+            5500
+          );
           playSuccessChime();
-          setIsSyncing(false);
-          setTimeout(() => setSyncToast(null), 5000);
           return;
         }
-      }
 
-      if (localCount > 0) {
-        setDraws(localUpdated);
-        setSyncToast(`🔄 ซิงค์สำเร็จ! เพิ่มข้อมูลงวดใหม่ ${localCount} งวด (ล่าสุด ${localUpdated[0].date})`);
-        playSuccessChime();
+        if (localCount > 0) {
+          drawsRef.current = localUpdated;
+          setDraws(localUpdated);
+          showToast(`🔄 ซิงค์สำเร็จ! เพิ่มข้อมูลงวดใหม่ ${localCount} งวด (ล่าสุด ${localUpdated[0].date})`, 5000);
+          playSuccessChime();
+        } else {
+          showToast(`✅ ฐานข้อมูลครบถ้วนเป็นงวดล่าสุดแล้ว (${workingList[0]?.date || '-'} | ${workingList.length} งวด)`, 4500);
+        }
       } else {
-        setSyncToast(`✅ ฐานข้อมูลเป็นงวดล่าสุดเรียบร้อยแล้ว (${workingList[0]?.date || '1 พ.ย. 69'})`);
+        if (localCount > 0) {
+          drawsRef.current = localUpdated;
+          setDraws(localUpdated);
+        }
+        showToast(`⚠️ ${result.error || 'ไม่สามารถดึงข้อมูลจาก ThaiORC ได้ในขณะนี้'}`, 5000);
       }
     } catch (e) {
       console.error(e);
-      setSyncToast(`✅ ข้อมูลปัจจุบันเป็นงวดล่าสุด (${draws[0]?.date || '1 พ.ย. 69'})`);
+      showToast('⚠️ เกิดข้อผิดพลาดในการเชื่อมต่อ ThaiORC กรุณาลองใหม่อีกครั้ง', 5000);
     } finally {
       setIsSyncing(false);
-      setTimeout(() => setSyncToast(null), 4000);
     }
-  }, [draws, isSyncing]);
+  }, [isSyncing, showToast]);
 
-  // Add Draw (with duplicate date prevention)
+  // Add Draw (with duplicate date prevention & chronological ordering)
   const handleAddDraw = useCallback((newDraw: LotteryDraw) => {
+    const normDate = formatThaiDateShort(newDraw.date) || newDraw.date.trim();
+    const normalizedNew: LotteryDraw = { ...newDraw, date: normDate };
     setDraws(prev => {
-      const filtered = prev.filter(d => d.date.trim() !== newDraw.date.trim());
-      const updated = [newDraw, ...filtered];
+      const filtered = prev.filter(d => (formatThaiDateShort(d.date) || d.date.trim()) !== normDate);
+      const updated = sortAndRenumberDraws([normalizedNew, ...filtered]);
       saveStoredLotteryData(updated);
       return updated;
     });
-    setSyncToast(`✅ บันทึกผลงวด ${newDraw.date} เรียบร้อยแล้ว!`);
-    setTimeout(() => setSyncToast(null), 4000);
-  }, []);
+    showToast(`✅ บันทึกผลงวด ${normDate} เรียบร้อยแล้ว!`, 4000);
+  }, [showToast]);
 
   // Reset Data
   const handleResetData = useCallback(() => {
     const fresh = resetStoredLotteryData();
     setDraws(fresh);
+    setSelectedYear('all');
     setFormula(DEFAULT_FORMULA);
     playSuccessChime();
-    setSyncToast('🔄 รีเซ็ตฐานข้อมูลสถิติกลับเป็นค่ามาตรฐานเรียบร้อยแล้ว');
-    setTimeout(() => setSyncToast(null), 3000);
-  }, []);
+    showToast('🔄 รีเซ็ตฐานข้อมูลสถิติกลับเป็นค่ามาตรฐานเรียบร้อยแล้ว', 3000);
+  }, [showToast]);
 
   // Reset Formula
   const handleResetFormula = useCallback(() => {
@@ -227,10 +285,9 @@ export default function App() {
       setShowParams(true);
       playSuccessChime();
       const yearLabel = selectedYear === 'all' ? 'ทุกงวด' : `ปี ${selectedYear}`;
-      setSyncToast(`🤖 AI Auto-Tune สำเร็จ! ค้นพบสูตรที่เข้าเป้าสูงสุดสำหรับ ${yearLabel} เรียบร้อยแล้ว`);
-      setTimeout(() => setSyncToast(null), 4000);
+      showToast(`🤖 AI Auto-Tune สำเร็จ! ค้นพบสูตรที่เข้าเป้าสูงสุดสำหรับ ${yearLabel} เรียบร้อยแล้ว`, 4000);
     }, 700);
-  }, [activeDraws, payoutConfig, selectedYear]);
+  }, [activeDraws, payoutConfig, selectedYear, showToast]);
 
   // Click to open Ticket from Historical row
   const handleOpenHistoricalTicket = useCallback((row: BacktestRow) => {
@@ -295,7 +352,13 @@ export default function App() {
 
       {/* Sync Toast Notification */}
       {syncToast && (
-        <div className="bg-gradient-to-r from-emerald-600 to-teal-600 text-white px-4 py-2 text-xs font-bold flex items-center justify-between shadow-lg animate-in fade-in slide-in-from-top-1">
+        <div
+          className={`text-white px-4 py-2 text-xs font-bold flex items-center justify-between shadow-lg animate-in fade-in slide-in-from-top-1 ${
+            syncToast.startsWith('⚠️')
+              ? 'bg-gradient-to-r from-amber-600 to-rose-600'
+              : 'bg-gradient-to-r from-emerald-600 to-teal-600'
+          }`}
+        >
           <div className="flex items-center gap-2 max-w-[1600px] mx-auto w-full">
             <CheckCircle2 size={16} className="shrink-0" />
             <span>{syncToast}</span>

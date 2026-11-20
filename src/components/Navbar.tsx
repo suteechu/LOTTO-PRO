@@ -82,13 +82,13 @@ export const Navbar: React.FC<NavbarProps> = ({
         </div>
         <div className="h-3 w-px bg-gray-700" />
         <a
-          href="https://www.thairath.co.th/lottery/archive"
+          href="https://horoscope.thaiorc.com/lotto/thai/stats/lottery-years10.php"
           target="_blank"
           rel="noopener noreferrer"
           className="text-gray-400 hover:text-yellow-400 flex items-center gap-1 transition-colors text-[11px]"
-          title="เปิดตรวจสอบสถิติหวยย้อนหลัง Thairath.co.th"
+          title="เปิดตรวจสอบสถิติหวยย้อนหลัง 10 ปี บน ThaiORC"
         >
-          <span>อ้างอิง: ไทยรัฐ</span>
+          <span>อ้างอิง: ThaiORC 10ปี</span>
           <ExternalLink size={11} />
         </a>
         <div className="h-3 w-px bg-gray-700" />
@@ -135,7 +135,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             onAutoSync();
           }}
           disabled={isSyncing}
-          title="ซิงค์ผลสลากออนไลน์และตรวจงวดใหม่อัตโนมัติ"
+          title="ซิงค์ผลสลากย้อนหลังจาก ThaiORC อัตโนมัติ"
           className="flex items-center gap-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-2.5 py-1.5 rounded text-xs font-bold transition-all disabled:opacity-50"
         >
           <RefreshCcw size={13} className={isSyncing ? "animate-spin text-yellow-400" : "animate-spin-hover"} />

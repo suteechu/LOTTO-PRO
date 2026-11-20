@@ -1,4 +1,5 @@
 import { LotteryDraw, VariableDef } from '../types';
+import { formatThaiDateShort, parseThaiDateSortKey } from '../utils/onlineLottoSync';
 
 export const VARIABLES: VariableDef[] = [
   { id: 'h', label: 'ร้อยบน (H)', short: 'H', description: 'เลขหลักร้อย รางวัลที่ 1 งวดก่อน' },
@@ -67,6 +68,22 @@ export const INITIAL_LOTTERY_DATA: LotteryDraw[] = OFFICIAL_LATEST_DRAWS;
 
 const STORAGE_KEY = 'lotto_pro_custom_draws_v4';
 
+export function sortAndRenumberDraws(items: LotteryDraw[]): LotteryDraw[] {
+  const sorted = [...items].sort((a, b) => {
+    const ka = parseThaiDateSortKey(a.date);
+    const kb = parseThaiDateSortKey(b.date);
+    if (ka !== kb) return kb - ka;
+    if (b.drawNo !== a.drawNo) return b.drawNo - a.drawNo;
+    return b.id - a.id;
+  });
+
+  const total = sorted.length;
+  return sorted.map((item, idx) => ({
+    ...item,
+    drawNo: total - idx
+  }));
+}
+
 /**
  * รวมรายการผลหวยจาก LocalStorage และฐานข้อมูลอย่างเป็นทางการ โดยไม่ทำข้อมูลงวดใหม่หรือที่ผู้ใช้เพิ่มหาย
  */
@@ -75,28 +92,80 @@ export function mergeDraws(existing: LotteryDraw[], official: LotteryDraw[] = OF
 
   // 1. เพิ่มชุดทางการเข้าไปเป็นฐาน
   for (const off of official) {
-    const key = off.date.trim();
-    map.set(key, off);
+    const key = formatThaiDateShort(off.date) || off.date.trim();
+    map.set(key, { ...off, date: key });
   }
 
   // 2. รวมงวดที่ผู้ใช้เพิ่มเอง หรือดึงมาจากเว็บออนไลน์ (รักษาข้อมูลงวดที่ไม่มีในทางการ)
   for (const ex of existing) {
-    const key = ex.date.trim();
+    const key = formatThaiDateShort(ex.date) || ex.date.trim();
     if (!map.has(key)) {
-      map.set(key, ex);
+      map.set(key, { ...ex, date: key });
     } else {
       const off = map.get(key)!;
-      map.set(key, { ...off, ...ex });
+      map.set(key, {
+        ...off,
+        ...ex,
+        date: key,
+        full6: ex.full6 || off.full6,
+        note: ex.note || off.note
+      });
     }
   }
 
-  // 3. เรียงลำดับจากงวดล่าสุดไปอดีต
-  const merged = Array.from(map.values()).sort((a, b) => {
-    if (b.drawNo !== a.drawNo) return b.drawNo - a.drawNo;
-    return b.id - a.id;
-  });
+  // 3. เรียงลำดับจากงวดล่าสุดไปอดีตตามวันที่จริง และจัดเลขงวดใหม่ให้ต่อเนื่อง
+  return sortAndRenumberDraws(Array.from(map.values()));
+}
 
-  return merged;
+/**
+ * ผสานผลสลากที่ดึงมาจากออนไลน์เข้ากับข้อมูลปัจจุบัน พร้อมนับงวดใหม่ที่เพิ่มเข้ามา
+ */
+export function mergeOnlineDraws(
+  currentDraws: LotteryDraw[],
+  incomingDraws: LotteryDraw[]
+): { updatedDraws: LotteryDraw[]; newCount: number; updatedCount: number } {
+  const map = new Map<string, LotteryDraw>();
+
+  for (const cur of currentDraws) {
+    const key = formatThaiDateShort(cur.date) || cur.date.trim();
+    map.set(key, { ...cur, date: key });
+  }
+
+  let newCount = 0;
+  let updatedCount = 0;
+
+  for (const inc of incomingDraws) {
+    const key = formatThaiDateShort(inc.date) || inc.date.trim();
+    if (!key) continue;
+
+    if (!map.has(key)) {
+      map.set(key, { ...inc, date: key });
+      newCount++;
+    } else {
+      const prev = map.get(key)!;
+      const mergedNote = inc.note || prev.note;
+      const mergedFull6 = inc.full6 || prev.full6;
+      if (mergedNote !== prev.note || mergedFull6 !== prev.full6) {
+        map.set(key, {
+          ...prev,
+          ...inc,
+          id: prev.id,
+          date: key,
+          full6: mergedFull6,
+          note: mergedNote
+        });
+        updatedCount++;
+      }
+    }
+  }
+
+  if (newCount === 0 && updatedCount === 0) {
+    return { updatedDraws: currentDraws, newCount: 0, updatedCount: 0 };
+  }
+
+  const updatedDraws = sortAndRenumberDraws(Array.from(map.values()));
+  saveStoredLotteryData(updatedDraws);
+  return { updatedDraws, newCount, updatedCount };
 }
 
 export function getStoredLotteryData(): LotteryDraw[] {
@@ -139,8 +208,8 @@ export function resetStoredLotteryData(): LotteryDraw[] {
 
 export function syncLatestDraws(currentDraws: LotteryDraw[]): { updatedDraws: LotteryDraw[]; newCount: number } {
   const merged = mergeDraws(currentDraws, OFFICIAL_LATEST_DRAWS);
-  const existingDates = new Set(currentDraws.map(d => d.date.trim()));
-  const newItems = merged.filter(d => !existingDates.has(d.date.trim()));
+  const existingDates = new Set(currentDraws.map(d => formatThaiDateShort(d.date) || d.date.trim()));
+  const newItems = merged.filter(d => !existingDates.has(formatThaiDateShort(d.date) || d.date.trim()));
 
   if (newItems.length > 0) {
     saveStoredLotteryData(merged);

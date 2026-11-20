@@ -31,7 +31,7 @@ export const AddDrawModal: React.FC<AddDrawModalProps> = ({
   // ฟังก์ชันดึงผลจากเว็บออนไลน์
   const handleFetchOnline = async () => {
     setIsFetchingWeb(true);
-    setStatusMsg({ type: 'info', text: 'กำลังเชื่อมต่อดึงผลสลากล่าสุดจากเว็บ (Sanook / Open API)...' });
+    setStatusMsg({ type: 'info', text: 'กำลังเชื่อมต่อดึงผลสลากล่าสุดจาก ThaiORC...' });
     playTerminalBeep(850, 0.08);
 
     try {
@@ -172,7 +172,7 @@ export const AddDrawModal: React.FC<AddDrawModalProps> = ({
               </button>
             </div>
             <p className="text-[10px] text-gray-400">
-              ระบบจะเชื่อมต่อไปยัง Sanook / Public Lottery API เพื่อกรอกผลให้อัตโนมัติ
+              ระบบจะเชื่อมต่อไปยัง ThaiORC (สถิติหวยย้อนหลัง 10 ปี) เพื่อกรอกผลให้อัตโนมัติ
             </p>
           </div>
 
@@ -184,7 +184,7 @@ export const AddDrawModal: React.FC<AddDrawModalProps> = ({
             </label>
             <input
               type="text"
-              placeholder="วางข้อความ เช่น '1 พ.ย. 69 รางวัลที่ 1 : 423224 เลขท้าย 2 ตัว : 85'"
+              placeholder="วางข้อความ เช่น '16/11/2569 645654 06' หรือ '16 พ.ย. 69 รางวัลที่ 1 : 645654 เลขท้าย 2 ตัว : 06'"
               className="w-full bg-[#0e1217] border border-gray-700 focus:border-yellow-500 rounded-lg px-3 py-2 text-xs text-white placeholder-gray-600 outline-none transition-colors"
               value={pasteInput}
               onChange={(e) => handlePasteChange(e.target.value)}
