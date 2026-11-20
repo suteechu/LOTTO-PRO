@@ -188,7 +188,9 @@ export const PredictionHero: React.FC<PredictionHeroProps> = ({
         <div>
           <p className="text-[9px] text-gray-400 font-bold uppercase tracking-wider">Risk:Reward</p>
           <p className="text-sm font-mono font-black text-amber-400">1:{metrics.riskRewardRatio.toFixed(1)}</p>
-          <span className="text-[9px] text-emerald-400 font-mono">ROI +{metrics.roi.toFixed(0)}%</span>
+          <span className={`text-[9px] font-mono ${metrics.roi >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+            ROI {metrics.roi >= 0 ? '+' : ''}{metrics.roi.toFixed(0)}%
+          </span>
         </div>
         <div className="border-l border-gray-800">
           <p className="text-[9px] text-gray-400 font-bold uppercase tracking-wider">3D Jackpot</p>

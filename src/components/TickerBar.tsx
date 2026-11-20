@@ -1,13 +1,11 @@
 import React from 'react';
 import { LotteryDraw, StrategyMetrics } from '../types';
-import { TrendingUp, Flame, Snowflake, Award, Calendar } from 'lucide-react';
+import { TrendingUp, Award, Calendar } from 'lucide-react';
 import { playTerminalBeep } from '../utils/sound';
 
 interface TickerBarProps {
   latestDraw: LotteryDraw;
   metrics: StrategyMetrics;
-  hotZone: number[];
-  coldZone: number[];
   selectedYear: string;
   onSelectYear: (year: string) => void;
   yearCounts: { id: string; label: string; count: number }[];
@@ -16,8 +14,6 @@ interface TickerBarProps {
 export const TickerBar: React.FC<TickerBarProps> = ({
   latestDraw,
   metrics,
-  hotZone,
-  coldZone,
   selectedYear,
   onSelectYear,
   yearCounts
@@ -77,32 +73,6 @@ export const TickerBar: React.FC<TickerBarProps> = ({
         <TrendingUp size={13} className="text-emerald-400" />
         <span className="text-gray-400">STRIKE 1D+:</span>
         <span className="font-bold text-emerald-400">{metrics.hit1PlusTopRate.toFixed(1)}%</span>
-      </div>
-
-      <div className="h-3 w-px bg-gray-800 shrink-0" />
-
-      {/* Hot Digits */}
-      <div className="flex items-center gap-1.5 shrink-0">
-        <Flame size={13} className="text-amber-500" />
-        <span className="text-gray-400">HOT NUMS:</span>
-        <div className="flex gap-1">
-          {hotZone.map(d => (
-            <span key={d} className="px-1 bg-amber-500/10 text-amber-400 font-bold rounded border border-amber-500/20">{d}</span>
-          ))}
-        </div>
-      </div>
-
-      <div className="h-3 w-px bg-gray-800 shrink-0" />
-
-      {/* Cold Digits */}
-      <div className="flex items-center gap-1.5 shrink-0">
-        <Snowflake size={13} className="text-blue-400" />
-        <span className="text-gray-400">COLD NUMS:</span>
-        <div className="flex gap-1">
-          {coldZone.map(d => (
-            <span key={d} className="px-1 bg-blue-500/10 text-blue-400 font-bold rounded border border-blue-500/20">{d}</span>
-          ))}
-        </div>
       </div>
 
       <div className="h-3 w-px bg-gray-800 shrink-0" />

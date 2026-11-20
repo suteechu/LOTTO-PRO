@@ -3,7 +3,7 @@ import { Navbar } from './components/Navbar';
 import { TickerBar } from './components/TickerBar';
 import { PredictionHero } from './components/PredictionHero';
 import { FormulaEditor } from './components/FormulaEditor';
-import { HotColdAnalytics } from './components/HotColdAnalytics';
+import { YearlyRRBreakdown, YearlyRRItem } from './components/YearlyRRBreakdown';
 import { BacktestTable } from './components/BacktestTable';
 import { PnLChart } from './components/PnLChart';
 import { TicketModal } from './components/TicketModal';
@@ -24,8 +24,7 @@ import {
   DEFAULT_FORMULA,
   predictDigits,
   runBacktest,
-  autoOptimizeFullFormula,
-  calculateDigitStats
+  autoOptimizeFullFormula
 } from './utils/engine';
 import { LotteryDraw, FormulaState, BacktestRow, PayoutConfig, DEFAULT_PAYOUT_CONFIG } from '../src/types';
 import { playSuccessChime, playTerminalBeep } from './utils/sound';
@@ -37,6 +36,30 @@ import {
 import { CheckCircle2 } from 'lucide-react';
 
 const PAYOUT_STORAGE_KEY = 'lotto_pro_payout_config_v4';
+
+function getLatestYearBE(items: LotteryDraw[]): string {
+  let maxYear = 0;
+  for (const d of items) {
+    const y = parseInt(extractThaiYearBE(d.date), 10);
+    if (!isNaN(y) && y > maxYear) maxYear = y;
+  }
+  return maxYear > 0 ? String(maxYear) : 'all';
+}
+
+function getDrawsSliceForYear(items: LotteryDraw[], year: string): LotteryDraw[] {
+  if (year === 'all') return items;
+  const yearIndices = items
+    .map((d, idx) => (extractThaiYearBE(d.date) === year ? idx : -1))
+    .filter(idx => idx !== -1);
+
+  if (yearIndices.length === 0) return items;
+
+  const minIdx = yearIndices[0];
+  const maxIdx = yearIndices[yearIndices.length - 1];
+  // Include 1 draw right after maxIdx for previous draw reference
+  const endIdx = maxIdx + 1 < items.length ? maxIdx + 2 : items.length;
+  return items.slice(minIdx, endIdx);
+}
 
 export default function App() {
   const [draws, setDraws] = useState<LotteryDraw[]>(() => getStoredLotteryData());
@@ -116,6 +139,9 @@ export default function App() {
         if (newCount > 0) {
           drawsRef.current = updatedDraws;
           setDraws(updatedDraws);
+          if (!userChangedYearRef.current) {
+            setSelectedYear(getLatestYearBE(updatedDraws));
+          }
           showToast(`⚡ ซิงค์ผลล่าสุดจาก ${res.source} เพิ่ม ${newCount} งวด (ล่าสุด ${updatedDraws[0]?.date}) เรียบร้อย!`, 5000);
           playSuccessChime();
         }
@@ -129,8 +155,14 @@ export default function App() {
     };
   }, [showToast]);
 
-  // Selected Year Filter ('all' | '2569' | '2568' | ...)
-  const [selectedYear, setSelectedYear] = useState<string>('all');
+  // Selected Year Filter (ค่าเริ่มต้นเป็นปีล่าสุดที่มีข้อมูล)
+  const [selectedYear, setSelectedYear] = useState<string>(() => getLatestYearBE(draws));
+  const userChangedYearRef = useRef(false);
+
+  const handleSelectYear = useCallback((year: string) => {
+    userChangedYearRef.current = true;
+    setSelectedYear(year);
+  }, []);
 
   // Dynamic year counts derived from stored draws
   const yearCounts = useMemo(() => {
@@ -155,18 +187,7 @@ export default function App() {
 
   // Active draws filtered by selected year (plus 1 previous draw as input)
   const activeDraws = useMemo(() => {
-    if (selectedYear === 'all') return draws;
-    const yearIndices = draws
-      .map((d, idx) => (extractThaiYearBE(d.date) === selectedYear ? idx : -1))
-      .filter(idx => idx !== -1);
-
-    if (yearIndices.length === 0) return draws;
-
-    const minIdx = yearIndices[0];
-    const maxIdx = yearIndices[yearIndices.length - 1];
-    // Include 1 draw right after maxIdx for previous draw reference
-    const endIdx = maxIdx + 1 < draws.length ? maxIdx + 2 : draws.length;
-    return draws.slice(minIdx, endIdx);
+    return getDrawsSliceForYear(draws, selectedYear);
   }, [draws, selectedYear]);
 
   // Latest draw is index 0
@@ -182,10 +203,22 @@ export default function App() {
     return runBacktest(activeDraws, formula, payoutConfig);
   }, [activeDraws, formula, payoutConfig]);
 
-  // Volume hot / cold stats for active draws
-  const volumeStats = useMemo(() => {
-    return calculateDigitStats(activeDraws, 'top3');
-  }, [activeDraws]);
+  // Per-year RR & performance breakdown + overall multi-year metrics
+  const { yearlyRRItems, allYearsMetrics } = useMemo(() => {
+    const allRes = runBacktest(draws, formula, payoutConfig);
+    const items: YearlyRRItem[] = yearCounts
+      .filter(y => y.id !== 'all')
+      .map(y => {
+        const slice = getDrawsSliceForYear(draws, y.id);
+        const { metrics: yMetrics } = runBacktest(slice, formula, payoutConfig);
+        return {
+          year: y.id,
+          drawCount: y.count,
+          metrics: yMetrics
+        };
+      });
+    return { yearlyRRItems: items, allYearsMetrics: allRes.metrics };
+  }, [draws, yearCounts, formula, payoutConfig]);
 
   // Manual Trigger Auto Sync (ThaiORC 10-year historical pages)
   const handleAutoSync = useCallback(async () => {
@@ -212,6 +245,9 @@ export default function App() {
         if (newCount > 0 || updatedCount > 0) {
           drawsRef.current = updatedDraws;
           setDraws(updatedDraws);
+          if (!userChangedYearRef.current) {
+            setSelectedYear(getLatestYearBE(updatedDraws));
+          }
           showToast(
             `🎉 ซิงค์จาก ${result.source} สำเร็จ! เพิ่มใหม่ ${newCount} งวด` +
             `${updatedCount > 0 ? ` • อัปเดต ${updatedCount} งวด` : ''} ` +
@@ -262,7 +298,8 @@ export default function App() {
   const handleResetData = useCallback(() => {
     const fresh = resetStoredLotteryData();
     setDraws(fresh);
-    setSelectedYear('all');
+    userChangedYearRef.current = false;
+    setSelectedYear(getLatestYearBE(fresh));
     setFormula(DEFAULT_FORMULA);
     playSuccessChime();
     showToast('🔄 รีเซ็ตฐานข้อมูลสถิติกลับเป็นค่ามาตรฐานเรียบร้อยแล้ว', 3000);
@@ -371,10 +408,8 @@ export default function App() {
       <TickerBar
         latestDraw={latestDraw}
         metrics={metrics}
-        hotZone={volumeStats.hotZone}
-        coldZone={volumeStats.coldZone}
         selectedYear={selectedYear}
-        onSelectYear={setSelectedYear}
+        onSelectYear={handleSelectYear}
         yearCounts={yearCounts}
       />
 
@@ -404,8 +439,13 @@ export default function App() {
             />
           )}
 
-          {/* Hot / Cold Volume */}
-          <HotColdAnalytics draws={activeDraws} />
+          {/* Yearly RR Breakdown */}
+          <YearlyRRBreakdown
+            items={yearlyRRItems}
+            allMetrics={allYearsMetrics}
+            selectedYear={selectedYear}
+            onSelectYear={handleSelectYear}
+          />
         </div>
 
         {/* Right Column (Backtesting & Charts) */}
